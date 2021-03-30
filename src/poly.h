@@ -146,7 +146,65 @@ static inline Mono MonoClone(const Mono *m) {
  * @param[in] q : wielomian @f$q@f$
  * @return @f$p + q@f$
  */
-Poly PolyAdd(const Poly *p, const Poly *q);
+Poly PolyAdd(const Poly *p, const Poly *q) {
+
+  // współczynnik liczbą całkowitą w obydwu, wtedy zwracamy wielomian z tym samym wykładnikiem i współczynnikiem będącym sumą tych dwóch
+  if (PolyIsCoeff(p) && PolyIsCoeff(q))
+    return PolyFromCoeff(p->coeff + q->coeff);
+
+  size_t p_size = p->size, p_iter = 0;
+  size_t q_size = q->size, q_iter = 0;
+  size_t new_monos_added_count = 0;
+  struct Mono *new_monos_buffer = (struct Mono *)malloc(sizeof(struct Mono) * (p_size + q_size));
+
+  while(p_iter < p_size || q_iter < q_size) {
+    // czy koniec jedej z tablic
+    if (p_iter == p_size)
+    {
+      new_monos_buffer[new_monos_added_count++] = q->arr[q_iter++];
+      continue;
+    }
+    if (q_iter == q_size)
+    {
+      new_monos_buffer[new_monos_added_count++] = p->arr[p_iter++];
+      continue;
+    }
+    // ----
+    // stopień
+    if(p->arr[p_iter].exp == q->arr[q_iter].exp)
+    {
+      // jeśli taki sam dodajemy wielomiany będące współczynnikami obudwu, jeśli dostaniemy zero, nic nie wstawiamy do tablicy
+      Poly newMaybeZeroCoeff = PolyAdd(&p->arr[p_iter].p, &q->arr[q_iter].p);
+      if (!PolyIsZero(&newMaybeZeroCoeff))
+      {
+        new_monos_buffer[new_monos_added_count].exp = p->arr[p_iter].exp;
+        new_monos_buffer[new_monos_added_count].p = newMaybeZeroCoeff;
+        new_monos_added_count++;
+      }
+      p_size++;
+      q_size++;
+    }
+    else
+    {
+      if(p->arr[p_iter].exp < q->arr[q_iter].exp)
+        new_monos_buffer[new_monos_added_count++] = p->arr[p_iter++];
+      else
+        new_monos_buffer[new_monos_added_count++] = q->arr[q_iter++];
+    }
+  }
+
+  if (new_monos_added_count == 0)
+  {
+    free(new_monos_buffer);
+    return PolyZero();
+  }
+
+  // zmniejszamy rozmiar tablicy jeśli nie potrzeba aż tyle miejsca
+  if (new_monos_added_count < p_size + q_size)
+    new_monos_buffer = (struct Mono *)realloc(new_monos_buffer, (sizeof(struct Mono) * new_monos_added_count));
+
+  return PolyAddMonos(new_monos_added_count, new_monos_buffer);
+}
 
 /**
  * Sumuje listę jednomianów i tworzy z nich wielomian.
