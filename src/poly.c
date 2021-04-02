@@ -204,6 +204,7 @@ bool PolyIsEq(const Poly *p, const Poly *q)
     return (p->coeff == q->coeff);
   if (p->size != q->size)
     return false;
+
   for(size_t i = 0; i < p->size; i++)
   {
     if (p->arr[i].exp != q->arr[i].exp)
@@ -227,3 +228,41 @@ Poly PolyClone(const Poly *p)
   return (Poly) {.size = p_size, .arr = copied_monos};
 }
 
+Poly PolyMul(const Poly *p, const Poly *q)
+{
+  bool p_is_coeff = PolyIsCoeff(p);
+  bool q_is_coeff = PolyIsCoeff(q);
+  // jeśli współczynnikami
+  if (p_is_coeff || q_is_coeff)
+  {
+    if (PolyIsZero(p) || PolyIsZero(q))
+      return PolyZero();
+    if (p_is_coeff && q_is_coeff)
+      return PolyFromCoeff(p->coeff * q->coeff);
+
+    if (q_is_coeff)
+    {
+      size_t new_monos_num = p->size;
+      Mono* multiplied_monos_array = (Mono*)malloc(new_monos_num * sizeof(Mono));
+
+      for (size_t i = 0; i < new_monos_num; i++)
+      {
+        multiplied_monos_array[i].p = PolyMul(&p->arr[i].p, q);
+        multiplied_monos_array[i].exp = p->arr[i].exp;
+      }
+      return (Poly) {.size = new_monos_num, .arr = multiplied_monos_array};
+    }
+    else
+      return PolyMul(q, p);
+  }
+
+  size_t new_monos_num = p->size * q->size;
+  Mono* multiplied_monos_array = (Mono*)malloc(new_monos_num * sizeof(Mono));
+  for (size_t p_i = 0; p_i < p->size; p_i++)
+    for (size_t q_i = 0; q_i < q->size; q_i++)
+    {
+      multiplied_monos_array[p_i * p->size + q_i].exp = p->arr[p_i].exp + q->arr[q_i].exp;
+      multiplied_monos_array[p_i * p->size + q_i].p = PolyMul(&p->arr[p_i].p, &q->arr[q_i].p);
+    }
+  return PolyAddMonos(new_monos_num, multiplied_monos_array);
+}

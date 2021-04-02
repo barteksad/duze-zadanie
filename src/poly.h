@@ -149,7 +149,7 @@ static inline Mono MonoClone(const Mono *m) {
 Poly PolyAdd(const Poly *p, const Poly *q);
 
 // MOJA FUNKCJA
-int compareMonosByExp(const Mono lhs, const Mono rhs);
+int compareMonosByExp(const Mono* lhs, const Mono* rhs);
 
 /**
  * Sumuje listę jednomianów i tworzy z nich wielomian.
@@ -158,7 +158,8 @@ int compareMonosByExp(const Mono lhs, const Mono rhs);
  * @param[in] monos : tablica jednomianów
  * @return wielomian będący sumą jednomianów
  */
-Poly PolyAddMonos(size_t count, const Mono monos[]);
+Poly PolyAddMonos(size_t count, Mono monos[]);
+// usunięcie const z monos
 
 /**
  * Mnoży dwa wielomiany.
@@ -209,6 +210,7 @@ poly_exp_t PolyDeg(const Poly *p);
  * @return @f$p = q@f$
  */
 bool PolyIsEq(const Poly *p, const Poly *q);
+// zakładamy, że Mono *arr jest posortowana niemalejąco po wykładniku
 
 /**
  * Wylicza wartość wielomianu w punkcie @p x.
