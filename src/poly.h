@@ -212,6 +212,11 @@ poly_exp_t PolyDeg(const Poly *p);
 bool PolyIsEq(const Poly *p, const Poly *q);
 // zakładamy, że Mono *arr jest posortowana niemalejąco po wykładniku
 
+// #MOJA FUNKCJA
+poly_coeff_t intiger_pow(poly_coeff_t base, poly_exp_t exp);
+// potęga dla liczb całkowitych, zapewnia prawidłowe zachowanie przy teście Overflow dla liczb całkowitych
+
+
 /**
  * Wylicza wartość wielomianu w punkcie @p x.
  * Wstawia pod pierwszą zmienną wielomianu wartość @p x.
@@ -224,5 +229,6 @@ bool PolyIsEq(const Poly *p, const Poly *q);
  * @return @f$p(x, x_0, x_1, \ldots)@f$
  */
 Poly PolyAt(const Poly *p, poly_coeff_t x);
+
 
 #endif /* __POLY_H__ */
