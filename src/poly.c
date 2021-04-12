@@ -32,6 +32,7 @@ Poly PolyAdd(const Poly *p, const Poly *q)
       size_t zero_index_used = 0;
       size_t first_p_mono_used = 0;
       size_t new_monos_buffer_size;
+      // printf("%ld %ld %ld\n\n", p->arr, p->arr[0].exp, p->size);
       if (p->arr[0].exp == 0)
       {
         if(!PolyIsCoeff(&p->arr[0].p))
@@ -39,6 +40,8 @@ Poly PolyAdd(const Poly *p, const Poly *q)
           Poly temp = PolyAdd(&p->arr[0].p, q);
           if (PolyIsZero(&temp))
           {
+            if (p->size == 1)
+              return PolyZero();
             new_monos_buffer_size = p->size - 1;
             new_monos_buffer = (Mono *)malloc(sizeof(Mono) * new_monos_buffer_size);
             CHECK_PTR(new_monos_buffer);
@@ -48,8 +51,7 @@ Poly PolyAdd(const Poly *p, const Poly *q)
             new_monos_buffer_size = p->size;
             new_monos_buffer = (Mono *)malloc(sizeof(Mono) * new_monos_buffer_size);
             CHECK_PTR(new_monos_buffer);
-            new_monos_buffer[0].exp = 0;
-            new_monos_buffer[0].p = temp;
+            new_monos_buffer[0] = MonoFromPoly(&temp, 0);
             zero_index_used = 1;
           }
         }
@@ -58,6 +60,8 @@ Poly PolyAdd(const Poly *p, const Poly *q)
           poly_coeff_t c = p->arr[0].p.coeff + q->coeff;
           if (c == 0)
           {
+            if (p->size == 1)
+              return PolyZero();
             new_monos_buffer_size = p->size - 1;
             new_monos_buffer = (Mono *)malloc(sizeof(Mono) * new_monos_buffer_size);
             CHECK_PTR(new_monos_buffer);
@@ -67,9 +71,8 @@ Poly PolyAdd(const Poly *p, const Poly *q)
             new_monos_buffer_size = p->size;
             new_monos_buffer = (Mono *)malloc(sizeof(Mono) * new_monos_buffer_size);
             CHECK_PTR(new_monos_buffer);
-            new_monos_buffer[0].exp = 0;
-            new_monos_buffer[0].p.coeff = c;
-            new_monos_buffer[0].p.arr = NULL;
+            Poly temp = PolyFromCoeff(c);
+            new_monos_buffer[0] = MonoFromPoly(&temp, 0);
             zero_index_used = 1;
           }
         }
@@ -80,9 +83,8 @@ Poly PolyAdd(const Poly *p, const Poly *q)
         new_monos_buffer_size = p->size + 1;
         new_monos_buffer = (Mono *)malloc(sizeof(Mono) * new_monos_buffer_size);
         CHECK_PTR(new_monos_buffer);
-        new_monos_buffer[0].exp = 0;
-        new_monos_buffer[0].p.coeff = q->coeff;
-        new_monos_buffer[0].p.arr = NULL;
+        Poly temp = PolyFromCoeff(q->coeff);
+        new_monos_buffer[0] = MonoFromPoly(&temp, 0);
         zero_index_used = 1;
 
       }
