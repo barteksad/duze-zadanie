@@ -1,18 +1,17 @@
 #include "poly.h"
 #include <stdlib.h> // qsort
 
-#ifndef MAX(a,b)
-#define MAX(a,b) (((a)>(b))?(a):(b))
-#endif
+#define MAX(a,b) \
+   ({ __typeof__ (a) _a = (a); \
+       __typeof__ (b) _b = (b); \
+     _a > _b ? _a : _b; })
 
-#ifndef CHECK_PTR(p)
 #define CHECK_PTR(p)  \
   do {                \
     if (p == NULL) {  \
       exit(1);        \
     }                 \
   } while (0)
-#endif
 
 
 Poly PolyAdd(const Poly *p, const Poly *q)
@@ -162,20 +161,19 @@ Poly PolyAdd(const Poly *p, const Poly *q)
 
 }
 
-int compareMonosByExp(const Mono* lhs, const Mono* rhs)
+int compareMonosByExp(const void * lhs, const void * rhs)
 {
-  // printf("tam: %d %d\n",lhs->exp , rhs->exp );
-  if (lhs->exp < rhs->exp)
+  if (((Mono *)lhs)->exp < ((Mono *)rhs)->exp)
       return -1;
-  if (lhs->exp > rhs->exp)
+  if (((Mono *)lhs)->exp > ((Mono *)rhs)->exp)
       return 1;
   return 0;
 }
 
-Poly PolyAddMonos(size_t count, Mono monos[])
+Poly PolyAddMonos(size_t count, const Mono monos[])
 {
-    qsort(monos, count, sizeof(Mono), compareMonosByExp);
     Mono* new_monos_buffer = (Mono*)malloc(count * sizeof(Mono));
+    qsort((Mono *)monos, count, sizeof(Mono), compareMonosByExp);
     CHECK_PTR(new_monos_buffer);
     size_t new_monos_added_count = 0;
     new_monos_buffer[new_monos_added_count++] = monos[0];
@@ -191,7 +189,7 @@ Poly PolyAddMonos(size_t count, Mono monos[])
         {
             Poly newMaybeZeroCoeff = PolyAdd(&monos[i].p, &new_monos_buffer[new_monos_added_count - 1].p);
             poly_exp_t current_exp = monos[i].exp;
-            MonoDestroy(&monos[i]);
+            PolyDestroy((Poly *)&monos[i].p);
             MonoDestroy(&new_monos_buffer[new_monos_added_count - 1]);
             if (PolyIsZero(&newMaybeZeroCoeff))
                 new_monos_added_count--;
@@ -401,7 +399,7 @@ poly_exp_t PolyDegBy(const Poly *p, size_t var_idx)
   if (var_idx > 0)
   {
     for(size_t i = 0; i < p->size; i++)
-      max_monos_by_exp = MAX(max_monos_by_exp, PolyDegBy(&p->arr[i], var_idx - 1));
+      max_monos_by_exp = MAX(max_monos_by_exp, PolyDegBy(&p->arr[i].p, var_idx - 1));
   }
   else
   {

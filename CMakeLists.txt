@@ -17,7 +17,7 @@ set(CMAKE_C_FLAGS "-std=c11 -Wall -Wextra")
 # Domyślne opcje dla wariantów Release i Debug są sensowne.
 # Jeśli to konieczne, ustawiamy tu inne.
 # set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG")
-# set(CMAKE_C_FLAGS_DEBUG "-g -ggdb")
+# set(CMAKE_C_FLAGS_DEBUG "-g -ggdb -ggdb3")
 
 # Wskazujemy pliki źródłowe.
 set(SOURCE_FILES
