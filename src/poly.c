@@ -1,3 +1,11 @@
+/** @file
+  Implementacja interfejsu klasy wielomianów rzadkich wielu zmiennych
+
+  @author Bartłomiej Sadlej
+  @copyright Uniwersytet Warszawski
+  @date 2021
+*/
+
 #include "poly.h"
 #include <stdlib.h> // qsort
 
@@ -16,8 +24,16 @@
 
 Poly PolyAdd(const Poly *p, const Poly *q)
 {
+  /*
+    Funkcja rozpatruje dwa osobne przypadki:
+    I. choć jeden z wielomianów jest współczynnikiem
+    II. obydwa są wielomianami nie będącymi współczynnikiem
+  */
 
-  // współczynnik liczbą całkowitą w obydwu, wtedy zwracamy wielomian z tym samym wykładnikiem i współczynnikiem będącym sumą tych dwóch
+  /*
+    I.  Jeżeli p lub q są współczynnikami to należy zsumować współczynniki przy zerowej potędze oraz
+        skopiować ewentualne pozostałe jednomiany z drugiego wielomianu
+  */
   if (PolyIsCoeff(p) || PolyIsCoeff(q))
   {
     if (PolyIsCoeff(q))
@@ -31,11 +47,14 @@ Poly PolyAdd(const Poly *p, const Poly *q)
       size_t zero_index_used = 0;
       size_t first_p_mono_used = 0;
       size_t new_monos_buffer_size;
-      // printf("%ld %ld %ld\n\n", p->arr, p->arr[0].exp, p->size);
+
+      // jak drugi wielomian ma niezerowy współczynnik przy zerowej potędze trzeba ten współczynnik dodać
+      // i sprawdzić czy nie jest zerowy po dodaniu, od tego zależy długość (Mono arr) w nowym wielomianie
       if (p->arr[0].exp == 0)
       {
+        // przypadek q = c_1, p = x_0^0(c_2 + ... ) + 
         if(!PolyIsCoeff(&p->arr[0].p))
-        {
+        {  
           Poly temp = PolyAdd(&p->arr[0].p, q);
           if (PolyIsZero(&temp))
           {
@@ -54,6 +73,7 @@ Poly PolyAdd(const Poly *p, const Poly *q)
             zero_index_used = 1;
           }
         }
+        // przypadek q = c_1, p = x_0^0 * c_2
         else
         {
           poly_coeff_t c = p->arr[0].p.coeff + q->coeff;
@@ -77,6 +97,7 @@ Poly PolyAdd(const Poly *p, const Poly *q)
         }
         first_p_mono_used = 1;
       }
+      // przypadek q = c_1, p = x_0^(nie zero) * ( ... )
       else
       {
         new_monos_buffer_size = p->size + 1;
@@ -87,6 +108,7 @@ Poly PolyAdd(const Poly *p, const Poly *q)
         zero_index_used = 1;
 
       }
+      // potem przepisujemy kopiujemy reszte z drugiego wielomianu
       for(size_t i = 0; i < p->size - first_p_mono_used; i++)
         new_monos_buffer[zero_index_used + i] = MonoClone(&p->arr[i + first_p_mono_used]);
       return (Poly) {.size = new_monos_buffer_size, .arr = new_monos_buffer};
@@ -96,6 +118,7 @@ Poly PolyAdd(const Poly *p, const Poly *q)
       return PolyAdd(q, p);
   }
 
+  // jak dwa różne to po kolei względem rosnących wykładników dodajemy
   size_t p_size = p->size, p_iter = 0;
   size_t q_size = q->size, q_iter = 0;
   size_t new_monos_added_count = 0;
@@ -103,7 +126,6 @@ Poly PolyAdd(const Poly *p, const Poly *q)
   CHECK_PTR(new_monos_buffer);
 
   while(p_iter < p_size || q_iter < q_size) {
-    // czy koniec jedej z tablic
     if (p_iter == p_size)
     {
       new_monos_buffer[new_monos_added_count++] = MonoClone(&q->arr[q_iter++]);
@@ -114,8 +136,7 @@ Poly PolyAdd(const Poly *p, const Poly *q)
       new_monos_buffer[new_monos_added_count++] = MonoClone(&p->arr[p_iter++]);
       continue;
     }
-    // ----
-    // stopień
+    
     if(p->arr[p_iter].exp == q->arr[q_iter].exp)
     {
       // jeśli taki sam dodajemy wielomiany będące współczynnikami obudwu, jeśli dostaniemy zero, nic nie wstawiamy do tablicy
@@ -150,6 +171,7 @@ Poly PolyAdd(const Poly *p, const Poly *q)
     CHECK_PTR(new_monos_buffer);
   }
 
+  // przypadek gdy po dodaniu mamy wielomian złożony z jednomiany stopnia zero to zwracamy jako wielomian stały
   if(new_monos_added_count == 1 && new_monos_buffer[0].exp == 0 && PolyIsCoeff(&new_monos_buffer[0].p))
   {
     poly_coeff_t coeff = new_monos_buffer[0].p.coeff;
@@ -172,6 +194,10 @@ int compareMonosByExp(const void * lhs, const void * rhs)
 
 Poly PolyAddMonos(size_t count, const Mono monos[])
 {
+    /*
+      sortuje tablice monos i po kolei dodaje do nowej tablicy
+      uwzględnia powtarzające się potęgi oraz zerujące współczynniki i zlicza adekwatnie rozmiar
+    */
     Mono* new_monos_buffer = (Mono*)malloc(count * sizeof(Mono));
     qsort((Mono *)monos, count, sizeof(Mono), compareMonosByExp);
     CHECK_PTR(new_monos_buffer);
@@ -202,6 +228,7 @@ Poly PolyAddMonos(size_t count, const Mono monos[])
 
     }
 
+    // zmniejszamy rozmiar tablicy jeśli nie potrzeba aż tyle miejsca
     if (new_monos_added_count < count)
     {
       if (new_monos_added_count == 0)
@@ -212,6 +239,8 @@ Poly PolyAddMonos(size_t count, const Mono monos[])
       new_monos_buffer = (Mono *)realloc(new_monos_buffer, sizeof(Mono) * new_monos_added_count);
       CHECK_PTR(new_monos_buffer);
     }
+
+    // przypadek gdy po dodaniu mamy wielomian złożony z jednomiany stopnia zero to zwracamy jako wielomian stały
     if (new_monos_added_count == 1 && new_monos_buffer[0].exp == 0 && PolyIsCoeff(&new_monos_buffer[0].p))
     {
       poly_coeff_t coeff = new_monos_buffer[0].p.coeff;
@@ -235,15 +264,20 @@ void PolyDestroy(Poly *p)
 
 bool PolyIsEq(const Poly *p, const Poly *q)
 {
+  /*
+    porównuje wykładniki wielomianów a potem jednomiany składowe obydwu
+  */
+
   bool p_is_coeff = PolyIsCoeff(p);
   bool q_is_coeff = PolyIsCoeff(q);
 
   if (p_is_coeff && q_is_coeff)
     return (p->coeff == q->coeff);
-  if (p_is_coeff && !q_is_coeff && q->arr[0].exp == 0 && PolyIsCoeff(&q->arr[0].p))
-    return (PolyIsEq(p, &q->arr[0].p));
-  if (q_is_coeff && !p_is_coeff && p->arr[0].exp == 0 && PolyIsCoeff(&p->arr[0].p))
-    return (PolyIsEq(q, &p->arr[0].p));  
+  // przypadek gdy p = c_1, q = x_0^0 * c_1 i na odwrót
+  // if (p_is_coeff && !q_is_coeff && q->arr[0].exp == 0 && PolyIsCoeff(&q->arr[0].p))
+  //   return (PolyIsEq(p, &q->arr[0].p));
+  // if (q_is_coeff && !p_is_coeff && p->arr[0].exp == 0 && PolyIsCoeff(&p->arr[0].p))
+  //   return (PolyIsEq(q, &p->arr[0].p));  
   
   if (PolyIsCoeff(p) ^ PolyIsCoeff(q))
     return false;
@@ -264,7 +298,9 @@ Poly PolyClone(const Poly *p)
 {
   if (PolyIsCoeff(p))
     return PolyFromCoeff(p->coeff);
-  
+  /*
+    po kolei klonuje składowe jednomiany
+  */
   size_t p_size = p->size;
   Mono* copied_monos = (Mono *)malloc(p_size * sizeof(Mono));
   CHECK_PTR(copied_monos);
@@ -276,9 +312,14 @@ Poly PolyClone(const Poly *p)
 
 Poly PolyMul(const Poly *p, const Poly *q)
 {
+  /*
+    sumuje wykładniki i rekurencyjnie mnoży każdy składowy jednomian z jednego z każdym składowym jednomianem z drugiego
+    tak uzyskane jednomiany sumuje funckją PolyAddMonos()
+  */
+
   bool p_is_coeff = PolyIsCoeff(p);
   bool q_is_coeff = PolyIsCoeff(q);
-  // jeśli współczynnikami
+  
   if (p_is_coeff || q_is_coeff)
   {
     if (PolyIsZero(p) || PolyIsZero(q))
@@ -288,6 +329,7 @@ Poly PolyMul(const Poly *p, const Poly *q)
 
     if (q_is_coeff)
     {
+      // jeśli q to współczynnik to mnożymy każdy z jednomianów składowych p przez niego i zapisujemy to w nowej tablicy
       size_t new_monos_num = p->size;
       size_t not_used_slots = 0;
       Mono* multiplied_monos_array = (Mono*)malloc(new_monos_num * sizeof(Mono));
@@ -306,9 +348,11 @@ Poly PolyMul(const Poly *p, const Poly *q)
           multiplied_monos_array[i - not_used_slots].exp = p->arr[i].exp;
       }
       
+      // zmniejszamy rozmiar tablicy jeśli nie potrzeba aż tyle miejsca
       if (not_used_slots > 0)
       {
         new_monos_num -= not_used_slots;
+        // jeśli wszystkie wysumowane po mnożeniu się wyzerowały to zwracamy zero    
         if(new_monos_num == 0)
         {
           free(multiplied_monos_array);
@@ -323,14 +367,18 @@ Poly PolyMul(const Poly *p, const Poly *q)
       return PolyMul(q, p);
   }
 
+  // mnożymy każdy z każdym więc potrzeba tyle miejsca
   size_t new_monos_num = p->size * q->size;
+  // potrzebne do zliczania wielomianów zerowych dostanych z mnożenia
   size_t not_used_slots = 0;
   Mono* multiplied_monos_array = (Mono*)malloc(new_monos_num * sizeof(Mono));
   for (size_t p_i = 0; p_i < p->size; p_i++)
     for (size_t q_i = 0; q_i < q->size; q_i++)
     {
+      // mnożenie polega na zsumowaniu wykładników i wymnożeniu rekurencyjnie wielomianów będących współczynnikamy przy zmiennej danej potęgi
       multiplied_monos_array[p_i * q->size + q_i - not_used_slots].exp = p->arr[p_i].exp + q->arr[q_i].exp;
       multiplied_monos_array[p_i * q->size + q_i - not_used_slots].p = PolyMul(&p->arr[p_i].p, &q->arr[q_i].p);
+      // być może jako wynik mnożenia dostaniemy zero
       if (PolyIsZero(&multiplied_monos_array[p_i * q->size + q_i - not_used_slots].p))
       {
         MonoDestroy(&multiplied_monos_array[p_i * q->size + q_i - not_used_slots]);
@@ -338,18 +386,22 @@ Poly PolyMul(const Poly *p, const Poly *q)
       }
     }
 
+  // zmniejszamy rozmiar tablicy jeśli nie potrzeba aż tyle miejsca
   if (not_used_slots > 0)
   {
-    new_monos_num -= not_used_slots;    
+    new_monos_num -= not_used_slots;
+    // jeśli wszystkie wysumowane po mnożeniu się wyzerowały to zwracamy zero    
     if (new_monos_num == 0)
     {
       free(multiplied_monos_array);
       return PolyZero();
     }
+    
     multiplied_monos_array = (Mono *)realloc(multiplied_monos_array, new_monos_num * sizeof(Mono));
     CHECK_PTR(multiplied_monos_array);
   }
   
+  // używamy funkcji PolyAddMonos żeby poprawnie zsumować nowe jednomiany
   Poly result = PolyAddMonos(new_monos_num, multiplied_monos_array);
   free(multiplied_monos_array);
   return result;
@@ -357,6 +409,9 @@ Poly PolyMul(const Poly *p, const Poly *q)
 
 Poly PolyNeg(const Poly *p)
 {
+  /*
+    mnoży wielomian p przez wielomian stały = -1
+  */
   Poly result, temp = PolyFromCoeff(-1);
   result = PolyMul(p, &temp);
   PolyDestroy(&temp);
@@ -365,6 +420,9 @@ Poly PolyNeg(const Poly *p)
 
 Poly PolySub(const Poly *p, const Poly *q)
 {
+  /*
+    mnoży wielomian q przez wielomian stały = -1 i sumuje go z p
+  */
   Poly result, temp = PolyNeg(q);
   result = PolyAdd(p, &temp);
   PolyDestroy(&temp);
@@ -373,12 +431,16 @@ Poly PolySub(const Poly *p, const Poly *q)
 
 poly_exp_t PolyDeg(const Poly *p)
 {
+  /*
+    zwraca największy ze stopni z jednomianów składowych
+  */
   if (PolyIsCoeff(p))
     return (p->coeff == 0 ? -1 : 0);
   
   poly_exp_t max_monos_exp = -1;
   for(size_t i = 0; i < p->size; i++)
   {
+    // stopień przy zmiennej x_j + maksymalny stopnień wielomianu będącego jej współczynnikiem
     poly_exp_t i_mono_exp = p->arr[i].exp + PolyDeg(&p->arr[i].p);
     max_monos_exp = MAX(max_monos_exp, i_mono_exp);
   }
@@ -394,7 +456,9 @@ poly_exp_t PolyDegBy(const Poly *p, size_t var_idx)
     else
       return -1;
   }
-
+  /*
+    rekurencyjnie sprawdza stopnie przy zmiennej var_idx w jednomianach składowych i zwraca maximum z nich
+  */
   poly_exp_t max_monos_by_exp = -1;
   if (var_idx > 0)
   {
@@ -414,6 +478,9 @@ poly_exp_t PolyDegBy(const Poly *p, size_t var_idx)
 
 poly_coeff_t intiger_pow(poly_coeff_t base, poly_exp_t exp)
 {
+    /*
+      implementacja algorytmu potęgowania w złożoności logarytmicznej względem wykładnika
+    */
     poly_coeff_t result = 1;
     while(true)
     {
@@ -430,9 +497,15 @@ poly_coeff_t intiger_pow(poly_coeff_t base, poly_exp_t exp)
 
 Poly PolyAt(const Poly *p, poly_coeff_t x)
 {
+  /*
+    wartość wielomianu stałego jest stała, niezależna od punktu ewaluacji
+  */
   if (PolyIsCoeff(p))
     return PolyFromCoeff(p->coeff);
 
+  /*
+    pokolei ewaluujemy jednomiany składowe p w punkcie x i sumujemy je w nowym, początkowo równym zero wielomianie 
+  */
   Poly acc = PolyZero();
   for (size_t i = 0; i < p->size; i++)
   {

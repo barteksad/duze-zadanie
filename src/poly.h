@@ -78,6 +78,10 @@ static inline Poly PolyZero(void) {
   return PolyFromCoeff(0);
 }
 
+/**
+ * Sprawdza czy wielomian jest tożsamościowo równy zeru
+ * @return @f$[p == 0 * W(x)]@f$
+ */
 static inline bool PolyIsZero(const Poly *p);
 
 /**
@@ -148,7 +152,15 @@ static inline Mono MonoClone(const Mono *m) {
  */
 Poly PolyAdd(const Poly *p, const Poly *q);
 
-// MOJA FUNKCJA
+/**
+ * Porównuje jednomiany po wykładniku.
+ * @param[in] lhs : jednomian @f$lhs@f$
+ * @param[in] rhs : wielomian @f$rhs@f$
+ * @return 
+ * wykładnik p mniejszy niż wykładnik p : -1, 
+ * wykładnik p równy wykładnikowi p : 0, 
+ * wykładnik p większy niż wykładnik p : 1
+ */
 int compareMonosByExp(const void * lhs, const void * rhs);
 
 /**
@@ -212,10 +224,14 @@ poly_exp_t PolyDeg(const Poly *p);
 bool PolyIsEq(const Poly *p, const Poly *q);
 // zakładamy, że Mono *arr jest posortowana niemalejąco po wykładniku
 
-// #MOJA FUNKCJA
+/**
+ * Oblicza potęgę liczby całkowitej.
+ * Zapewnia oczekiwane zachowanie dla liczb całkowitych. (test overflow)
+ * @param[in] base : podstawa @f$base@f$
+ * @param[in] exp : wykładnik @f$exp@f$
+ * @return @f$base^{exp}@f$
+ */
 poly_coeff_t intiger_pow(poly_coeff_t base, poly_exp_t exp);
-// potęga dla liczb całkowitych, zapewnia prawidłowe zachowanie przy teście Overflow dla liczb całkowitych
-
 
 /**
  * Wylicza wartość wielomianu w punkcie @p x.
