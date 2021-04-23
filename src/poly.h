@@ -231,7 +231,7 @@ bool PolyIsEq(const Poly *p, const Poly *q);
  * @param[in] exp : wykładnik @f$exp@f$
  * @return @f$base^{exp}@f$
  */
-poly_coeff_t intiger_pow(poly_coeff_t base, poly_exp_t exp);
+poly_coeff_t intigerPow(poly_coeff_t base, poly_exp_t exp);
 
 /**
  * Wylicza wartość wielomianu w punkcie @p x.

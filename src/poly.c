@@ -476,7 +476,7 @@ poly_exp_t PolyDegBy(const Poly *p, size_t var_idx)
 
 
 
-poly_coeff_t intiger_pow(poly_coeff_t base, poly_exp_t exp)
+poly_coeff_t intigerPow(poly_coeff_t base, poly_exp_t exp)
 {
     /*
       implementacja algorytmu potęgowania w złożoności logarytmicznej względem wykładnika
@@ -509,7 +509,7 @@ Poly PolyAt(const Poly *p, poly_coeff_t x)
   Poly acc = PolyZero();
   for (size_t i = 0; i < p->size; i++)
   {
-    poly_coeff_t value = intiger_pow(x, p->arr[i].exp);
+    poly_coeff_t value = intigerPow(x, p->arr[i].exp);
     Poly temp1 = PolyFromCoeff(value);
     Poly temp2 = PolyMul(&temp1, &p->arr[i].p);
     PolyDestroy(&temp1);
