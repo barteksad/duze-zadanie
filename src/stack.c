@@ -16,6 +16,14 @@
     }                 \
   } while (0)
 
+Stack* createNewStack()
+{
+  Stack *s = malloc(sizeof(Stack));
+  CHECK_PTR(s);
+  s->head = NULL;
+  s->size = 0;
+}
+
 Poly* StackPop(Stack *stack)
 {
     assert(stack->size > 0);
@@ -58,4 +66,5 @@ void StackNodeFree(StackNode *node)
 void StackFree(Stack *stack)
 {
     StackNodeFree(stack->head);
+    free(stack);
 }

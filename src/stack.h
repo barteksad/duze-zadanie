@@ -24,10 +24,14 @@ typedef struct StackNode
     struct StackNode *next;
 } StackNode;
 
+Stack* createNewStack();
+
 Poly* StackPop(Stack *stack);
 
 void StackAdd(Stack *stack, Poly *p);
+
 void StackNodeFree(StackNode *node);
 
 void StackFree(Stack *stack);
+
 
