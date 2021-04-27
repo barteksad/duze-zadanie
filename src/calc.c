@@ -31,14 +31,17 @@ int main()
             ungetc(c, stdin);
             Poly *p = read_poly();
             if(p == NULL)
+            {
+
               printf("ERROR!\n");
-            StackAdd(stack, p);
+            }
+            else
+              StackAdd(stack, p);
             break;
         default:
             break;
             // read_task(stack, c);
         }
-        break;
     }
 
     StackFree(stack);

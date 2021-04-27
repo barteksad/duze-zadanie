@@ -22,6 +22,7 @@ Stack* createNewStack()
   CHECK_PTR(s);
   s->head = NULL;
   s->size = 0;
+  return s;
 }
 
 Poly* StackPop(Stack *stack)
@@ -59,6 +60,7 @@ void StackNodeFree(StackNode *node)
     {
       StackNodeFree(node->next);
       PolyDestroy(node->p);
+      free(node->p);
       free(node);
     }
 }

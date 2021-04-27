@@ -55,22 +55,31 @@ Poly* read_poly()
 
     Poly *p = NULL;
     c = fgetc(stdin);
+    if(c != '-')
+        ungetc(c, stdin);
     if(c == '(')
     {
-        ungetc(c, stdin);
         p = read_poly();
+        if(p == NULL)
+        return NULL;
     }
+
     else if(c == '-' || (c >= '0' && c <= '9'))
     {
         long sign = 1;
         poly_coeff_t coeff = 0;
         if(c == '-')
             sign = -1;
-        else
-            ungetc(c, stdin);
         bool success = read_number(&coeff);
         if(!success)
+        {
+            if(!p)
+            {
+                PolyDestroy(p);
+                free(p);
+            }
             return NULL;
+        }
         coeff *= sign;
         p = malloc(sizeof(Poly));
         CHECK_PTR(p);
@@ -79,6 +88,11 @@ Poly* read_poly()
     else
     {
         BAD_INPUT(c);
+        if(!p)
+        {
+            PolyDestroy(p);
+            free(p);
+        }
         return NULL;
     }
 
@@ -87,8 +101,8 @@ Poly* read_poly()
     if(c != ',')
     {
         BAD_INPUT(c);
-        if(p!=NULL)
-            PolyDestroy(p);
+        PolyDestroy(p);
+        free(p);
         return NULL;
     }
     else
@@ -99,47 +113,60 @@ Poly* read_poly()
         if(!success)
         {
             PolyDestroy(p);
+            free(p);
             return NULL;
         }
 
         if(exp == 0 && PolyIsCoeff(p))
-            return p;
-
-        q = malloc(sizeof(Poly));
-        CHECK_PTR(q);
-        Mono m[] = {MonoFromPoly(p, exp)};
-        *q = PolyAddMonos(1, m);
-        // PolyDestroy(p);
-        // q->size = 1;
-        // q->arr = malloc(sizeof(Mono));
-        // CHECK_PTR(q->arr);
-        // q->arr[0] = MonoFromPoly(p, exp);
+            q = p;
+        else
+        {
+            q = malloc(sizeof(Poly));
+            CHECK_PTR(q);
+            Mono m[] = {MonoFromPoly(p, exp)};
+            *q = PolyAddMonos(1, m);
+            free(p);
+        }
     }
 
     c = getc(stdin);
     if(c != ')')
     {
-        PolyDestroy(p);
+        PolyDestroy(q);
+        free(q);
         BAD_INPUT(c);
         return NULL;
     }
 
     c = getc(stdin);
-    if(c == '\n' || c == EOF)
+    if(c == '\n' || c == EOF || c == ',')
+    {
+        if(c == ',')
+            ungetc(c, stdin);
         return q;
+    }
     else if(c == '+')
     {
         p = read_poly();
+        if(p == NULL)
+        {
+            PolyDestroy(q);
+            free(q);
+            return NULL;
+        }
         Poly *w = malloc(sizeof(Poly));
         *w = PolyAdd(p, q);
         PolyDestroy(p);
         PolyDestroy(q);
+        free(p);
+        free(q);
         return w;
     }
     else
     {
         BAD_INPUT(c);
         PolyDestroy(q);
+        free(q);
         return NULL;
     }
 }
