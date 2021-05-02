@@ -194,6 +194,8 @@ int compareMonosByExp(const void * lhs, const void * rhs)
 
 Poly PolyAddMonos(size_t count, const Mono monos[])
 {
+    if(count == 0)
+      return PolyZero();
     /*
       sortuje tablice monos i po kolei dodaje do nowej tablicy
       uwzględnia powtarzające się potęgi oraz zerujące współczynniki i zlicza adekwatnie rozmiar
