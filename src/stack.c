@@ -9,6 +9,7 @@
 #include "stack.h"
 #include <stdlib.h>
 
+
 #define CHECK_PTR(p)  \
   do {                \
     if (p == NULL) {  \
@@ -52,6 +53,16 @@ void StackAdd(Stack *stack, Poly *p)
         stack->head = new_head;
     }
     stack->size++;
+}
+
+Poly* StackHead(Stack *stack)
+{
+  return stack->head->p;
+}
+
+Poly* StackHead2(Stack *stack)
+{
+  return stack->head->next->p;
 }
 
 void StackNodeFree(StackNode *node)

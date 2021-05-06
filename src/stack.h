@@ -30,6 +30,10 @@ Poly* StackPop(Stack *stack);
 
 void StackAdd(Stack *stack, Poly *p);
 
+Poly* StackHead(Stack *stack);
+
+Poly* StackHead2(Stack *stack);
+
 void StackNodeFree(StackNode *node);
 
 void StackFree(Stack *stack);

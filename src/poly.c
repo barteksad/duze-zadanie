@@ -449,12 +449,13 @@ poly_exp_t PolyDeg(const Poly *p)
 
 poly_exp_t PolyDegBy(const Poly *p, size_t var_idx)
 {
+  if(PolyIsZero(p))
+    return -1;
+
   if (PolyIsCoeff(p))
   {
     if (var_idx == 0)
       return PolyIsZero(p) ? -1 : 0;
-    else
-      return -1;
   }
   /*
     rekurencyjnie sprawdza stopnie przy zmiennej var_idx w jednomianach składowych i zwraca maximum z nich

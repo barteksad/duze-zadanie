@@ -19,6 +19,8 @@ set(CMAKE_C_FLAGS "-std=c11 -Wall -Wextra")
 # set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG")
 # set(CMAKE_C_FLAGS_DEBUG "-g")
 
+# set(VS_DEBUGGER_COMMAND_ARGUMENTS "< '/home/bartek/Desktop/UW/IPP/duze-zadanie/2 part examples/example_others.in'")
+
 # Wskazujemy pliki źródłowe.
 set(SOURCE_FILES
     src/poly.c
