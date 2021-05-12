@@ -22,7 +22,7 @@ void readTask(Stack *stack, char c, size_t row_number);
 
 enum taskType decodeTask(char* input_string);
 
-void taskZero(Stack *stack, size_t row_number);
+void taskZero(Stack *stack);
 
 void taskIsCoeff(Stack *stack, size_t row_number);
 
@@ -49,4 +49,8 @@ void taskAt(Stack *stack, unsigned long long int x, size_t row_number);
 void taskPrint(Stack *stack, size_t row_number);
 
 void taskPop(Stack *stack, size_t row_number);
+
+void printPoly(Poly *p);
+
+void printMono(Mono *m);
 

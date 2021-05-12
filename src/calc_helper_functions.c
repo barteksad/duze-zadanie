@@ -470,7 +470,7 @@ void readTask(Stack *stack, char c, size_t row_number)
     switch (task)
     {
         case ZERO:
-            taskZero(stack, row_number);
+            taskZero(stack);
             break;
         case IS_COEFF:
             taskIsCoeff(stack, row_number);
@@ -517,7 +517,7 @@ void readTask(Stack *stack, char c, size_t row_number)
 
 }
 
-void taskZero(Stack *stack, size_t row_number)
+void taskZero(Stack *stack)
 {
     Poly *p = malloc(sizeof(Poly));
     CHECK_PTR(p);
@@ -577,7 +577,6 @@ void taskAdd(Stack *stack, size_t row_number)
         free(p);
         free(q);
         StackAdd(stack, r);
-        // free(r);
     }
 }
 
