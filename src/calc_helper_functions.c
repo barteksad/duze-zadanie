@@ -1,3 +1,11 @@
+/** @file
+  Implementacja interfejsu kalkulatora wielomianów rzadkich wielu zmiennych
+
+  @author Bartłomiej Sadlej
+  @copyright Uniwersytet Warszawski
+  @date 2021
+*/
+
 #include "calc_helper_functions.h"
 #include "stack.h"
 #include <stdio.h>
@@ -20,6 +28,8 @@
     }                 \
   } while (0)
 
+#define POLY_EXP_MAX 2147483647
+#define MAX_TASK_LEN 8 // IS_COEFF
 
 enum taskType
 {
@@ -230,7 +240,7 @@ Poly* readPoly()
     {
         poly_exp_t exp = 0;
         bool success = readNumberPolyExp(&exp);
-        if(exp > 2147483647) 
+        if(exp > POLY_EXP_MAX) 
             success = false;
         if(!success)
         {
@@ -358,7 +368,7 @@ enum taskType decodeTask(char* input_string)
 
 void readTask(Stack *stack, char c, size_t row_number)
 {
-    char* input_string = malloc(9 * sizeof(char));
+    char* input_string = malloc( (MAX_TASK_LEN + 1) * sizeof(char));
     CHECK_PTR(input_string);
     size_t i = 0;
 
@@ -366,7 +376,7 @@ void readTask(Stack *stack, char c, size_t row_number)
     {
         if((c != '_' && !(c >='A' && c <= 'Z')) || i > 7)
         {
-            if(isWhitespace(c)) // jestśi AT'\t'jest jako zły numer
+            if(isWhitespace(c)) // AT(tab) jako zły numer
             {
                 input_string[i] = '\0';
                 enum taskType task = decodeTask(input_string);
@@ -410,50 +420,13 @@ void readTask(Stack *stack, char c, size_t row_number)
     poly_coeff_t x;
     if(task == DEG_BY)
     {
-        bool success = false;
-        var_idx = 0;
-        c = fgetc(stdin);
-        if(c != ' ')
-            success = false;
-        else
-        {
-          success = readNumberUnsignedLong(&var_idx);
-          c = fgetc(stdin);
-        }
-        if(!success || (c != '\n' && c != EOF))
-        {
-            BAD_INPUT(c);
-            fprintf(stderr, "ERROR %ld DEG BY WRONG VARIABLE\n", row_number);
+        if(!ReadNumerToDegBy(&var_idx, row_number))
             return;
-        }
-        ungetc(c, stdin);
     }
     else if(task == AT)
     {
-        poly_coeff_t sign = 1;
-        bool success = false;
-        x = 0;
-        c = fgetc(stdin);
-        if(c != ' ')
-            success = false;
-        else
-        {
-            c = fgetc(stdin);
-            if(c == '-')
-                sign = -1;
-            else
-                ungetc(c, stdin);
-            success = readNumberPolyCoeff(&x, sign);
-            c = fgetc(stdin);
-        }
-        if(!success || (c != '\n' && c != EOF))
-        {
-            BAD_INPUT(c);
-            fprintf(stderr, "ERROR %ld AT WRONG VALUE\n", row_number);
+        if(!ReadNumberToAt(&x, row_number))
             return;
-        }
-        ungetc(c, stdin);
-        x *= sign;
     }
     else
     {
@@ -515,6 +488,57 @@ void readTask(Stack *stack, char c, size_t row_number)
             break;
     }
 
+}
+
+bool ReadNumerToDegBy(size_t *var_idx, size_t row_number)
+{
+    bool success = false;
+    *var_idx = 0;
+    char c = fgetc(stdin);
+    if(c != ' ')
+        success = false;
+    else
+    {
+      success = readNumberUnsignedLong(var_idx);
+      c = fgetc(stdin);
+    }
+    if(!success || (c != '\n' && c != EOF))
+    {
+        BAD_INPUT(c);
+        fprintf(stderr, "ERROR %ld DEG BY WRONG VARIABLE\n", row_number);
+        return false;
+    }
+    ungetc(c, stdin);
+    return true;
+}
+
+bool ReadNumberToAt(poly_coeff_t *x, size_t row_number)
+{
+    poly_coeff_t sign = 1;
+    bool success = false;
+    *x = 0;
+    char c = fgetc(stdin);
+    if(c != ' ')
+        success = false;
+    else
+    {
+        c = fgetc(stdin);
+        if(c == '-')
+            sign = -1;
+        else
+            ungetc(c, stdin);
+        success = readNumberPolyCoeff(x, sign);
+        c = fgetc(stdin);
+    }
+    if(!success || (c != '\n' && c != EOF))
+    {
+        BAD_INPUT(c);
+        fprintf(stderr, "ERROR %ld AT WRONG VALUE\n", row_number);
+        return false;;
+    }
+    ungetc(c, stdin);
+    *x *= sign;
+    return true;
 }
 
 void taskZero(Stack *stack)

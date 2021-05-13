@@ -1,3 +1,11 @@
+/** @file
+  Interfejs kalkulatora wielomianów rzadkich wielu zmiennych
+
+  @author Bartłomiej Sadlej
+  @copyright Uniwersytet Warszawski
+  @date 2021
+*/
+
 #pragma once
 #include "stack.h"
 #include <stdio.h>
@@ -21,6 +29,10 @@ bool readNumberPolyExp(poly_exp_t *x);
 void readTask(Stack *stack, char c, size_t row_number);
 
 enum taskType decodeTask(char* input_string);
+
+bool ReadNumerToDegBy(size_t *var_idx, size_t row_number);
+
+bool ReadNumberToAt(poly_coeff_t *x, size_t row_number);
 
 void taskZero(Stack *stack);
 

@@ -79,8 +79,9 @@ static inline Poly PolyZero(void) {
 }
 
 /**
- * Sprawdza czy wielomian jest tożsamościowo równy zeru
- * @return @f$[p == 0 * W(x)]@f$
+ * Sprawdza, czy wielomian jest tożsamościowo równy zeru.
+ * @param[in] p : wielomian
+ * @return Czy wielomian jest równy zeru?
  */
 static inline bool PolyIsZero(const Poly *p);
 
@@ -105,11 +106,7 @@ static inline bool PolyIsCoeff(const Poly *p) {
   return p->arr == NULL;
 }
 
-/**
- * Sprawdza, czy wielomian jest tożsamościowo równy zeru.
- * @param[in] p : wielomian
- * @return Czy wielomian jest równy zeru?
- */
+
 static inline bool PolyIsZero(const Poly *p) {
   return PolyIsCoeff(p) && p->coeff == 0;
 }
@@ -231,7 +228,7 @@ bool PolyIsEq(const Poly *p, const Poly *q);
  * @param[in] exp : wykładnik @f$exp@f$
  * @return @f$base^{exp}@f$
  */
-poly_coeff_t intigerPow(poly_coeff_t base, poly_exp_t exp);
+poly_coeff_t IntigerPow(poly_coeff_t base, poly_exp_t exp);
 
 /**
  * Wylicza wartość wielomianu w punkcie @p x.

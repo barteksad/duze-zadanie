@@ -1,3 +1,11 @@
+/** @file
+  Kalkulator wielomianów rzadkich wielu zmiennych
+
+  @author Bartłomiej Sadlej
+  @copyright Uniwersytet Warszawski
+  @date 2021
+*/
+
 #include "stack.h"
 #include "calc_helper_functions.h"
 #include <stdlib.h>
@@ -17,8 +25,6 @@
       exit(1);        \
     }                 \
   } while (0)
-
-// ./test.sh work/debug/poly 2\ part\ examples/
 
 int main()
 {
