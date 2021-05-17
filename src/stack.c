@@ -20,6 +20,11 @@
 #define INITIAL_STACK_SIZE 512
 #define STACK_RESIZE_MULTIPLIER 2
 
+/**
+ * Implementacja typu stosu Stack
+ * stos jest przechowywany na tablicy o początkowym rozmiarze INITIAL_STACK_SIZE
+ * w przypadku braku miejsca w tablicy jest ona rozszerzana STACK_RESIZE_MULTIPLIER razy
+ */
 struct Stack{
     Poly* arr;
     size_t size;

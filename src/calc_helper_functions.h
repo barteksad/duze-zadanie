@@ -17,27 +17,27 @@ enum taskType;
  * @param[in] c : znak
  * @return czy litera?
  */
-bool isAlpha(char c);
+bool IsAlpha(char c);
 
 /**
  * Sprawdza czy dany znak jest białym znakiem.
  * @param[in] c : znak
  * @return czy biały znak?
  */
-bool isWhitespace(char c);
+bool IsWhitespace(char c);
 
 /**
  * Wczytuje wielomian nie będący współczynnikiem
  * funkcja działa rekurencyjnie dla całej linii
  * @return wielomian
  */
-Poly* readPoly();
+Poly* ReadPoly();
 
 /**
  * Wczytuje wielomian będący współczynnikiem
  * @return wielomian
  */
-bool readPolyCoeff(Stack *stack, char c);
+bool ReadPolyCoeff(Stack *stack, char c);
 
 /**
  * Wczytuje liczbę typu poly_coeff_t.
@@ -45,35 +45,35 @@ bool readPolyCoeff(Stack *stack, char c);
  * @param[in] sign znak liczby
  * @return czy się udało?
  */
-bool readNumberPolyCoeff(poly_coeff_t *x, poly_coeff_t sign);
+bool ReadNumberPolyCoeff(poly_coeff_t *x, poly_coeff_t sign);
 
 /**
  * Wczytuje liczbę typu size_t.
  * @param[in] x zmienna do zapisu
  * @return czy się udało?
  */
-bool readNumberUnsignedLong(size_t *x);
+bool ReadNumberUnsignedLong(size_t *x);
 
 /**
  * Wczytuje liczbę typu poly_exp_t.
  * @param[in] x zmienna do zapisu
  * @return czy się udało?
  */
-bool readNumberPolyExp(poly_exp_t *x);
+bool ReadNumberPolyExp(poly_exp_t *x);
 
 /**
  * Wczytuje zadanie.
  * @param[in] stack stos z wielomianami
  * @param[in] size_t numer aktualnego wiersza
  */
-void readTask(Stack *stack, char c, size_t row_number);
+void ReadTask(Stack *stack, char c, size_t row_number);
 
 /**
  * Rozpoznaje zadanie na podstawie napisu.
  * @param[in] input_string wczytany napis
  * @return enum z typem zadania
  */
-enum taskType decodeTask(char* input_string);
+enum taskType DecodeTask(char* input_string);
 
 /**
  * Wczytuje liczbę do zadania DEG_BY
@@ -97,70 +97,70 @@ bool ReadNumberToAt(poly_coeff_t *x, size_t row_number);
  * Obsługa zadania ZERO.
  * @param[in] stack stos z wielomianami
  */
-void taskZero(Stack *stack);
+void TaskZero(Stack *stack);
 
 /**
  * Obsługa zadania IS_COEFF.
  * @param[in] stack stos z wielomianami
  * @param[in] row_number numer aktualnego wiersza
  */
-void taskIsCoeff(Stack *stack, size_t row_number);
+void TaskIsCoeff(Stack *stack, size_t row_number);
 
 /**
  * Obsługa zadania IS_ZERO.
  * @param[in] stack stos z wielomianami
  * @param[in] row_number numer aktualnego wiersza
  */
-void taskIsZero(Stack *stack, size_t row_number);
+void TaskIsZero(Stack *stack, size_t row_number);
 
 /**
  * Obsługa zadania CLONE.
  * @param[in] stack stos z wielomianami
  * @param[in] row_number numer aktualnego wiersza
  */
-void taskClone(Stack *stack, size_t row_number);
+void TaskClone(Stack *stack, size_t row_number);
 
 /**
  * Obsługa zadania ADD.
  * @param[in] stack stos z wielomianami
  * @param[in] row_number numer aktualnego wiersza
  */
-void taskAdd(Stack *stack, size_t row_number);
+void TaskAdd(Stack *stack, size_t row_number);
 
 /**
  * Obsługa zadania MUL.
  * @param[in] stack stos z wielomianami
  * @param[in] row_number numer aktualnego wiersza
  */
-void taskMul(Stack *stack, size_t row_number);
+void TaskMul(Stack *stack, size_t row_number);
 
 /**
  * Obsługa zadania NEG.
  * @param[in] stack stos z wielomianami
  * @param[in] row_number numer aktualnego wiersza
  */
-void taskNeg(Stack *stack, size_t row_number);
+void TaskNeg(Stack *stack, size_t row_number);
 
 /**
  * Obsługa zadania SUB.
  * @param[in] stack stos z wielomianami
  * @param[in] row_number numer aktualnego wiersza
  */
-void taskSub(Stack *stack, size_t row_number);
+void TaskSub(Stack *stack, size_t row_number);
 
 /**
  * Obsługa zadania IS_EQ.
  * @param[in] stack stos z wielomianami
  * @param[in] row_number numer aktualnego wiersza
  */
-void taskIsEq(Stack *stack, size_t row_number);
+void TaskIsEq(Stack *stack, size_t row_number);
 
 /**
  * Obsługa zadania DEG.
  * @param[in] stack stos z wielomianami
  * @param[in] row_number numer aktualnego wiersza
  */
-void taskDeg(Stack *stack, size_t row_number);
+void TaskDeg(Stack *stack, size_t row_number);
 
 /**
  * Obsługa zadania DEG_BY.
@@ -168,7 +168,7 @@ void taskDeg(Stack *stack, size_t row_number);
  * @param[in] var_idx wartość dla polecenia DEG_BY
  * @param[in] row_number numer aktualnego wiersza
  */
-void taskDegBy(Stack *stack, size_t var_idx, size_t row_number);
+void TaskDegBy(Stack *stack, size_t var_idx, size_t row_number);
 
 /**
  * Obsługa zadania AT.
@@ -176,31 +176,31 @@ void taskDegBy(Stack *stack, size_t var_idx, size_t row_number);
  * @param[in] poly_coeff_t wartość dla polecenia AT
  * @param[in] row_number numer aktualnego wiersza
  */
-void taskAt(Stack *stack, poly_coeff_t x, size_t row_number);
+void TaskAt(Stack *stack, poly_coeff_t x, size_t row_number);
 
 /**
  * Obsługa zadania PRINT.
  * @param[in] stack stos z wielomianami
  * @param[in] row_number numer aktualnego wiersza
  */
-void taskPrint(Stack *stack, size_t row_number);
+void TaskPrint(Stack *stack, size_t row_number);
 
 /**
  * Obsługa zadania POP.
  * @param[in] stack stos z wielomianami
  * @param[in] row_number numer aktualnego wiersza
  */
-void taskPop(Stack *stack, size_t row_number);
+void TaskPop(Stack *stack, size_t row_number);
 
 /**
  * Wypisuje wielomian
  * @param[in] p wielomian
  */
-void printPoly(Poly *p);
+void PrintPoly(Poly *p);
 
 /**
  * Wypisuje jednomian
  * @param[in] m jednomian
  */
-void printMono(Mono *m);
+void PrintMono(Mono *m);
 

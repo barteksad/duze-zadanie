@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+// wczytuje znaki do końca złego wiersza
 #define BAD_INPUT(c) \
   do { \
     while(c != '\n' && c != EOF) { \
@@ -47,7 +48,7 @@ int main()
               break;
           case '(' :
               ungetc(c, stdin);
-              Poly* p = readPoly(stack);
+              Poly* p = ReadPoly(stack);
               if(p == NULL)
                 fprintf(stderr, "ERROR %ld WRONG POLY\n", row_number);
               else
@@ -58,15 +59,15 @@ int main()
               break;
           default:
               if(c >= 'A' && c <= 'Z')
-                readTask(stack, c, row_number);
+                ReadTask(stack, c, row_number);
               else if ((c >= '0' && c <= '9') || c == '-')
               {
-                if(!readPolyCoeff(stack, c))
+                if(!ReadPolyCoeff(stack, c))
                   fprintf(stderr, "ERROR %ld WRONG POLY\n", row_number);
               }
               else
               {
-                if(isAlpha(c))
+                if(IsAlpha(c))
                   fprintf(stderr, "ERROR %ld WRONG COMMAND\n", row_number);
                 else
                   fprintf(stderr, "ERROR %ld WRONG POLY\n", row_number);
