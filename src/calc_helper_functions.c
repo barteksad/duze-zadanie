@@ -695,7 +695,7 @@ void taskDegBy(Stack *stack, size_t var_idx, size_t row_number)
     }
 }
 
-void taskAt(Stack *stack, unsigned long long x, size_t row_number)
+void taskAt(Stack *stack, poly_coeff_t x, size_t row_number)
 {
     if(stack->size == 0)
         fprintf(stderr, "ERROR %ld STACK UNDERFLOW\n", row_number);
