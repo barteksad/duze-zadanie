@@ -37,7 +37,7 @@ Poly* readPoly();
  * Wczytuje wielomian będący współczynnikiem
  * @return wielomian
  */
-Poly* readPolyCoeff(char c);
+bool readPolyCoeff(Stack *stack, char c);
 
 /**
  * Wczytuje liczbę typu poly_coeff_t.

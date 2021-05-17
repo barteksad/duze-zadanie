@@ -9,7 +9,6 @@
 #include "stack.h"
 #include <stdlib.h>
 
-
 #define CHECK_PTR(p)  \
   do {                \
     if (p == NULL) {  \
@@ -17,67 +16,69 @@
     }                 \
   } while (0)
 
+
+#define INITIAL_STACK_SIZE 512
+#define STACK_RESIZE_MULTIPLIER 2
+
+struct Stack{
+    Poly* arr;
+    size_t size;
+    size_t arr_size;
+ };
+
+
 Stack* createNewStack()
 {
   Stack *s = malloc(sizeof(Stack));
   CHECK_PTR(s);
-  s->head = NULL;
+  s->arr = malloc(sizeof(Poly) * INITIAL_STACK_SIZE);
+  CHECK_PTR(s->arr);
   s->size = 0;
+  s->arr_size = INITIAL_STACK_SIZE;
   return s;
 }
 
-Poly* StackPop(Stack *stack)
+size_t StackSize(Stack *stack)
+{
+  return stack->size;
+}
+
+Poly StackPop(Stack *stack)
 {
     assert(stack->size > 0);
-    Poly *p = stack->head->p;
-    StackNode *temp = stack->head->next;
-    free(stack->head);
-    stack->head = temp;
+    Poly p = stack->arr[stack->size - 1];
     stack->size--;
     return p;
 }
 
-void StackAdd(Stack *stack, Poly *p)
+void StackAdd(Stack *stack, Poly p)
 {
-    StackNode *new_head = malloc(sizeof(StackNode));
-    CHECK_PTR(new_head);
-    new_head->p = p;
-    if(!stack->head)
-    {
-        new_head->next = NULL;
-        stack->head = new_head;
-    }
-    else
-    {
-        new_head->next = stack->head;
-        stack->head = new_head;
-    }
-    stack->size++;
+  if(stack->size >= stack->arr_size)
+  {
+    size_t new_size = STACK_RESIZE_MULTIPLIER * stack->arr_size;
+    stack->arr = realloc(stack->arr, sizeof(Poly) * new_size);
+    stack->arr_size = new_size;
+  }
+  stack->arr[stack->size] = p;
+  stack->size++;
 }
 
 Poly* StackHead(Stack *stack)
 {
-  return stack->head->p;
+  assert(stack->size > 0);
+  return &stack->arr[stack->size - 1];
 }
 
 Poly* StackHead2(Stack *stack)
 {
-  return stack->head->next->p;
-}
-
-void StackNodeFree(StackNode *node)
-{
-    if(node)
-    {
-      StackNodeFree(node->next);
-      PolyDestroy(node->p);
-      free(node->p);
-      free(node);
-    }
+  assert(stack->size > 1);
+  return &stack->arr[stack->size - 2];
 }
 
 void StackFree(Stack *stack)
 {
-    StackNodeFree(stack->head);
+    for(size_t i = 0; i < stack->size; i++)
+      PolyDestroy(&stack->arr[i]);
+    free(stack->arr);
     free(stack);
 }

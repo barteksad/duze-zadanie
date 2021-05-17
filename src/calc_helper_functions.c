@@ -302,7 +302,7 @@ Poly* readPoly()
     }
 }
 
-Poly* readPolyCoeff(char c)
+bool readPolyCoeff(Stack *stack, char c)
 {
     poly_coeff_t sign = 1;
     if(c == '-')
@@ -322,14 +322,13 @@ Poly* readPolyCoeff(char c)
     if(!success)
     {
         BAD_INPUT(c);
-        return NULL;
+        return false;
     }
 
     value *= sign;
-    Poly *p = malloc(sizeof(Poly));
-    CHECK_PTR(p);
-    *p = PolyFromCoeff(value);
-    return p;
+    Poly p = PolyFromCoeff(value);
+    StackAdd(stack, p);
+    return true;
 }
 
 enum taskType decodeTask(char* input_string)
@@ -543,15 +542,13 @@ bool ReadNumberToAt(poly_coeff_t *x, size_t row_number)
 
 void taskZero(Stack *stack)
 {
-    Poly *p = malloc(sizeof(Poly));
-    CHECK_PTR(p);
-    *p = PolyZero();
+    Poly p = PolyZero();
     StackAdd(stack, p);
 }
 
 void taskIsCoeff(Stack *stack, size_t row_number)
 {
-    if(stack->size == 0)
+    if(StackSize(stack) == 0)
         fprintf(stderr, "ERROR %ld STACK UNDERFLOW\n", row_number);
     else
     {
@@ -562,7 +559,7 @@ void taskIsCoeff(Stack *stack, size_t row_number)
 
 void taskIsZero(Stack *stack, size_t row_number)
 {
-    if(stack->size == 0)
+    if(StackSize(stack) == 0)
         fprintf(stderr, "ERROR %ld STACK UNDERFLOW\n", row_number);
     else
     {
@@ -573,96 +570,77 @@ void taskIsZero(Stack *stack, size_t row_number)
 
 void taskClone(Stack *stack, size_t row_number)
 {
-    if(stack->size == 0)
+    if(StackSize(stack) == 0)
         fprintf(stderr, "ERROR %ld STACK UNDERFLOW\n", row_number);
     else
     {
         Poly *p = StackHead(stack);
-        Poly *q = malloc(sizeof(Poly));
-        CHECK_PTR(q);
-        *q = PolyClone(p);
+        Poly q = PolyClone(p);
         StackAdd(stack, q);
     }
 }
 
 void taskAdd(Stack *stack, size_t row_number)
 {
-    if(stack->size < 2)
+    if(StackSize(stack) < 2)
         fprintf(stderr, "ERROR %ld STACK UNDERFLOW\n", row_number);
     else
     {
-        Poly *p = StackPop(stack);
-        Poly *q = StackPop(stack);
-        Poly *r = malloc(sizeof(Poly));
-        CHECK_PTR(r);
-        *r = PolyAdd(p, q);
-        PolyDestroy(p);
-        PolyDestroy(q);
-        free(p);
-        free(q);
+        Poly p = StackPop(stack);
+        Poly q = StackPop(stack);
+        Poly r = PolyAdd(&p, &q);
+        PolyDestroy(&p);
+        PolyDestroy(&q);
         StackAdd(stack, r);
     }
 }
 
 void taskMul(Stack *stack, size_t row_number)
 {
-    if(stack->size < 2)
+    if(StackSize(stack) < 2)
         fprintf(stderr, "ERROR %ld STACK UNDERFLOW\n", row_number);
     else
     {
-        Poly *p = StackPop(stack);
-        Poly *q = StackPop(stack);
-        Poly *r = malloc(sizeof(Poly));
-        CHECK_PTR(r);
-        *r = PolyMul(p, q);
-        PolyDestroy(p);
-        PolyDestroy(q);
-        free(p);
-        free(q);
+        Poly p = StackPop(stack);
+        Poly q = StackPop(stack);
+        Poly r = PolyMul(&p, &q);
+        PolyDestroy(&p);
+        PolyDestroy(&q);
         StackAdd(stack, r);
-        // free(r);
     }
 }
 
 void taskNeg(Stack *stack, size_t row_number)
 {
-    if(stack->size == 0)
+    if(StackSize(stack) == 0)
         fprintf(stderr, "ERROR %ld STACK UNDERFLOW\n", row_number);
     else
     {
-        Poly *p = StackPop(stack);
-        Poly *q = malloc(sizeof(Poly));
-        CHECK_PTR(q);
-        *q = PolyNeg(p);
-        PolyDestroy(p);
-        free(p);
+        Poly p = StackPop(stack);
+        Poly q = PolyNeg(&p);
+        PolyDestroy(&p);
         StackAdd(stack, q);
     }
 }
 
 void taskSub(Stack *stack, size_t row_number)
 {
-    if(stack->size < 2)
+    if(StackSize(stack) < 2)
         fprintf(stderr, "ERROR %ld STACK UNDERFLOW\n", row_number);
     else
     {
-        Poly *p = StackPop(stack);
-        Poly *q = StackPop(stack);
-        Poly *r = malloc(sizeof(Poly));
-        CHECK_PTR(r);
-        *r = PolySub(p, q);
-        PolyDestroy(p);
-        PolyDestroy(q);
-        free(p);
-        free(q);
+        Poly p = StackPop(stack);
+        Poly q = StackPop(stack);
+        Poly r = PolySub(&p, &q);
+        PolyDestroy(&p);
+        PolyDestroy(&q);
         StackAdd(stack, r);
-        // free(r);
     }
 }
 
 void taskIsEq(Stack *stack, size_t row_number)
 {
-    if(stack->size < 2)
+    if(StackSize(stack) < 2)
         fprintf(stderr, "ERROR %ld STACK UNDERFLOW\n", row_number);
     else
     {
@@ -675,7 +653,7 @@ void taskIsEq(Stack *stack, size_t row_number)
 
 void taskDeg(Stack *stack, size_t row_number)
 {
-    if(stack->size == 0)
+    if(StackSize(stack) == 0)
         fprintf(stderr, "ERROR %ld STACK UNDERFLOW\n", row_number);
     else
     {
@@ -686,7 +664,7 @@ void taskDeg(Stack *stack, size_t row_number)
 
 void taskDegBy(Stack *stack, size_t var_idx, size_t row_number)
 {
-    if(stack->size == 0)
+    if(StackSize(stack) == 0)
         fprintf(stderr, "ERROR %ld STACK UNDERFLOW\n", row_number);
     else
     {
@@ -697,16 +675,13 @@ void taskDegBy(Stack *stack, size_t var_idx, size_t row_number)
 
 void taskAt(Stack *stack, poly_coeff_t x, size_t row_number)
 {
-    if(stack->size == 0)
+    if(StackSize(stack) == 0)
         fprintf(stderr, "ERROR %ld STACK UNDERFLOW\n", row_number);
     else
     {
-        Poly *p = StackPop(stack);
-        Poly *q = malloc(sizeof(Poly));
-        CHECK_PTR(q);
-        *q = PolyAt(p, x);
-        PolyDestroy(p);
-        free(p);
+        Poly p = StackPop(stack);
+        Poly q = PolyAt(&p, x);
+        PolyDestroy(&p);
         StackAdd(stack, q);
     }
 }
@@ -736,7 +711,7 @@ void printPoly(Poly *p)
 
 void taskPrint(Stack *stack, size_t row_number)
 {
-    if(stack->size == 0)
+    if(StackSize(stack) == 0)
     {
         fprintf(stderr, "ERROR %ld STACK UNDERFLOW\n", row_number);
         return;
@@ -748,13 +723,12 @@ void taskPrint(Stack *stack, size_t row_number)
 
 void taskPop(Stack *stack, size_t row_number)
 {
-    if(stack->size == 0)
+    if(StackSize(stack) == 0)
         fprintf(stderr, "ERROR %ld STACK UNDERFLOW\n", row_number);
     else
     {
-        Poly *p = StackPop(stack);
-        PolyDestroy(p);
-        free(p);
+        Poly p = StackPop(stack);
+        PolyDestroy(&p);
     }
 }
 

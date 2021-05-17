@@ -9,32 +9,19 @@
 #pragma once
 #include "poly.h"
 
-struct StackNode;
-
-typedef struct Stack
-{
-    struct StackNode *head;
-    size_t size;
-
- }Stack;
-
-typedef struct StackNode
-{
-    Poly *p;
-    struct StackNode *next;
-} StackNode;
+typedef struct Stack Stack;
 
 Stack* createNewStack();
 
-Poly* StackPop(Stack *stack);
+Poly StackPop(Stack *stack);
 
-void StackAdd(Stack *stack, Poly *p);
+void StackAdd(Stack *stack, Poly p);
+
+size_t StackSize(Stack *stack);
 
 Poly* StackHead(Stack *stack);
 
 Poly* StackHead2(Stack *stack);
-
-void StackNodeFree(StackNode *node);
 
 void StackFree(Stack *stack);
 

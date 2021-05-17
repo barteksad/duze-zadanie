@@ -47,22 +47,22 @@ int main()
               break;
           case '(' :
               ungetc(c, stdin);
-              Poly *p = readPoly();
+              Poly* p = readPoly(stack);
               if(p == NULL)
                 fprintf(stderr, "ERROR %ld WRONG POLY\n", row_number);
               else
-                StackAdd(stack, p);
+              {
+                StackAdd(stack, *p);
+                free(p);
+              }
               break;
           default:
               if(c >= 'A' && c <= 'Z')
                 readTask(stack, c, row_number);
               else if ((c >= '0' && c <= '9') || c == '-')
               {
-                Poly *p = readPolyCoeff(c);
-                if(p == NULL)
+                if(!readPolyCoeff(stack, c))
                   fprintf(stderr, "ERROR %ld WRONG POLY\n", row_number);
-                else
-                  StackAdd(stack, p);
               }
               else
               {
