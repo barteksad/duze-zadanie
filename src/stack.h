@@ -10,7 +10,7 @@
 #include "poly.h"
 
 /**
- * Deklaracja typu stosu Stack
+ * Deklaracja typu stosu Stack.
  */
 typedef struct Stack Stack;
 

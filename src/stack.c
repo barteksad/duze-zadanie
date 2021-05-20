@@ -21,7 +21,7 @@
 #define STACK_RESIZE_MULTIPLIER 2
 
 /**
- * Implementacja typu stosu Stack
+ * To jest struktura przechowująca stos.
  * stos jest przechowywany na tablicy o początkowym rozmiarze INITIAL_STACK_SIZE
  * w przypadku braku miejsca w tablicy jest ona rozszerzana STACK_RESIZE_MULTIPLIER razy
  */

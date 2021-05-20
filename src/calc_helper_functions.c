@@ -29,7 +29,7 @@
     }                 \
   } while (0)
 
-#define POLY_EXP_MAX 2147483647
+#define POLY_EXP_MAX 2147483647 // specyfikacja zadania
 #define MAX_TASK_LEN 8 // IS_COEFF
 
 enum taskType

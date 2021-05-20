@@ -27,6 +27,7 @@
     }                 \
   } while (0)
 
+
 int main()
 {
     Stack* stack = createNewStack();
@@ -58,14 +59,14 @@ int main()
               }
               break;
           default:
-              if(c >= 'A' && c <= 'Z')
+              if(c >= 'A' && c <= 'Z') // task
                 ReadTask(stack, c, row_number);
-              else if ((c >= '0' && c <= '9') || c == '-')
+              else if ((c >= '0' && c <= '9') || c == '-') // poly coeff
               {
                 if(!ReadPolyCoeff(stack, c))
                   fprintf(stderr, "ERROR %ld WRONG POLY\n", row_number);
               }
-              else
+              else // błąd
               {
                 if(IsAlpha(c))
                   fprintf(stderr, "ERROR %ld WRONG COMMAND\n", row_number);

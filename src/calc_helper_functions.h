@@ -10,6 +10,9 @@
 #include "stack.h"
 #include <stdio.h>
 
+/**
+ * Enum reprezentujący operacje wykonywane przez kalkulator
+ */
 enum taskType;
 
 /**
