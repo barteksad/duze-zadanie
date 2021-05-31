@@ -96,6 +96,8 @@ bool ReadNumerToDegBy(size_t *var_idx, size_t row_number);
  */
 bool ReadNumberToAt(poly_coeff_t *x, size_t row_number);
 
+bool ReadNumerToCompose(size_t *var_idx, size_t row_number);
+
 /**
  * Obsługa zadania ZERO.
  * @param[in] stack stos z wielomianami
@@ -207,3 +209,4 @@ void PrintPoly(Poly *p);
  */
 void PrintMono(Mono *m);
 
+void TaskCompose(Stack *stack, size_t k, size_t row_number);

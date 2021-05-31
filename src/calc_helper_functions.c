@@ -48,6 +48,7 @@ enum taskType
     AT,
     PRINT,
     POP,
+    COMPOSE,
     __INVALID__
 };
 
@@ -387,6 +388,8 @@ enum taskType DecodeTask(char* input_string)
         return POP;
     if(!strcmp(input_string, "CLONE"))
         return CLONE;
+    if(!strcmp(input_string, "COMPOSE"))
+        return COMPOSE;
     return __INVALID__;
     
 }
@@ -453,6 +456,11 @@ void ReadTask(Stack *stack, char c, size_t row_number)
         if(!ReadNumberToAt(&x, row_number))
             return;
     }
+    else if(task == COMPOSE)
+    {
+        if(!ReadNumerToCompose(&var_idx, row_number))
+            return;
+    }
     else
     {
         c = fgetc(stdin);
@@ -509,6 +517,9 @@ void ReadTask(Stack *stack, char c, size_t row_number)
         case POP:
             TaskPop(stack, row_number);
             break;
+        case COMPOSE:
+            TaskCompose(stack, var_idx, row_number);
+            break;
         default:
             break;
     }
@@ -563,6 +574,28 @@ bool ReadNumberToAt(poly_coeff_t *x, size_t row_number)
     }
     ungetc(c, stdin);
     *x *= sign;
+    return true;
+}
+
+bool ReadNumerToCompose(size_t *var_idx, size_t row_number)
+{
+    bool success = false;
+    *var_idx = 0;
+    char c = fgetc(stdin);
+    if(c != ' ')
+        success = false;
+    else
+    {
+      success = ReadNumberUnsignedLong(var_idx);
+      c = fgetc(stdin);
+    }
+    if(!success || (c != '\n' && c != EOF))
+    {
+        BAD_INPUT(c);
+        fprintf(stderr, "ERROR %ld COMPOSE WRONG PARAMETER\n", row_number);
+        return false;
+    }
+    ungetc(c, stdin);
     return true;
 }
 
@@ -755,6 +788,32 @@ void TaskPop(Stack *stack, size_t row_number)
     {
         Poly p = StackPop(stack);
         PolyDestroy(&p);
+    }
+}
+
+void TaskCompose(Stack *stack, size_t k, size_t row_number)
+{
+    if(StackSize(stack) < k + 1 ||  k == ULONG_MAX)
+    {
+        fprintf(stderr, "ERROR %ld STACK UNDERFLOW\n", row_number);
+        return;
+    }
+    else
+    {
+        Poly p = StackPop(stack);
+        Poly *q = malloc(k * sizeof(Poly)); 
+        CHECK_PTR(q);
+    
+        for(size_t i = 1; i <= k; i++)
+            q[k - i] = StackPop(stack);
+    
+        Poly p2 = PolyCompose(&p, k, q);
+        PolyDestroy(&p);
+        StackAdd(stack, p2);
+    
+        for(size_t i = 0; i < k; i++)
+            PolyDestroy(&q[i]);
+        free(q);
     }
 }
 
