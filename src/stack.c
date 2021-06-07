@@ -7,14 +7,9 @@
 */
 
 #include "stack.h"
-#include <stdlib.h>
+#include "macros.h"
 
-#define CHECK_PTR(p)  \
-  do {                \
-    if (p == NULL) {  \
-      exit(1);        \
-    }                 \
-  } while (0)
+#include <stdlib.h>
 
 
 #define INITIAL_STACK_SIZE 512
@@ -26,13 +21,13 @@
  * w przypadku braku miejsca w tablicy jest ona rozszerzana STACK_RESIZE_MULTIPLIER razy
  */
 struct Stack{
-    Poly* arr;
-    size_t size;
-    size_t arr_size;
+    Poly* arr; ///< tablica na elementy stosu
+    size_t size; ///< aktualny rozmiar stosu
+    size_t arr_size; ///< aktualny rozmiar tablicy
  };
 
 
-Stack* createNewStack()
+Stack* CreateNewStack()
 {
   Stack *s = malloc(sizeof(Stack));
   CHECK_PTR(s);

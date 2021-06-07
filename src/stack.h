@@ -18,7 +18,7 @@ typedef struct Stack Stack;
  * Tworzy nowy pusty stos
  * @return wskaźnik na nowy stos
  */
-Stack* createNewStack();
+Stack* CreateNewStack();
 
 /**
  * Usuwa i zwraca wielomian z wierzchu stosu

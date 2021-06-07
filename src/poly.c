@@ -7,19 +7,9 @@
 */
 
 #include "poly.h"
+#include "macros.h"
+
 #include <stdlib.h> // qsort
-
-#define MAX(a,b) \
-   ({ __typeof__ (a) _a = (a); \
-       __typeof__ (b) _b = (b); \
-     _a > _b ? _a : _b; })
-
-#define CHECK_PTR(p)  \
-  do {                \
-    if (p == NULL) {  \
-      exit(1);        \
-    }                 \
-  } while (0)
 
 
 Poly PolyAdd(const Poly *p, const Poly *q)
@@ -31,8 +21,7 @@ Poly PolyAdd(const Poly *p, const Poly *q)
   */
 
   /*
-    I.  Jeżeli p lub q są współczynnikami to należy zsumować współczynniki przy zerowej potędze oraz
-        skopiować ewentualne pozostałe jednomiany z drugiego wielomianu
+    I.  Jeżeli p lub q są współczynnikami to należy zsumować współczynniki przy zerowej potędze oraz skopiować ewentualne pozostałe jednomiany z drugiego wielomianu
   */
   if (PolyIsCoeff(p) || PolyIsCoeff(q))
   {
@@ -48,8 +37,7 @@ Poly PolyAdd(const Poly *p, const Poly *q)
       size_t first_p_mono_used = 0;
       size_t new_monos_buffer_size;
 
-      // jak drugi wielomian ma niezerowy współczynnik przy zerowej potędze trzeba ten współczynnik dodać
-      // i sprawdzić czy nie jest zerowy po dodaniu, od tego zależy długość (Mono arr) w nowym wielomianie
+      // jak drugi wielomian ma niezerowy współczynnik przy zerowej potędze trzeba ten współczynnik dodać i sprawdzić czy nie jest zerowy po dodaniu, od tego zależy długość (Mono arr) w nowym wielomianie
       if (p->arr[0].exp == 0)
       {
         // przypadek q = c_1, p = x_0^0(c_2 + ... ) + 
@@ -183,7 +171,7 @@ Poly PolyAdd(const Poly *p, const Poly *q)
 
 }
 
-int compareMonosByExp(const void * lhs, const void * rhs)
+int CompareMonosByExp(const void * lhs, const void * rhs)
 {
   if (((Mono *)lhs)->exp < ((Mono *)rhs)->exp)
       return -1;
@@ -192,66 +180,79 @@ int compareMonosByExp(const void * lhs, const void * rhs)
   return 0;
 }
 
+Poly PolySumMonos(size_t count, const Mono* monos, Mono *new_monos_buffer, bool own)
+{
+  /*
+      sortuje tablice monos i po kolei dodaje do nowej tablicy, uwzględnia powtarzające się potęgi oraz zerujące współczynniki i zlicza adekwatnie rozmiar
+  */
+  size_t new_monos_added_count = 0;
+  if(own)
+  {
+    qsort((Mono *)monos, count, sizeof(Mono), CompareMonosByExp);
+    new_monos_buffer[new_monos_added_count++] = monos[0];
+  }
+  else
+    new_monos_buffer[new_monos_added_count++] = MonoClone(&monos[0]);
+    
+  for(size_t i = 1;i < count; i++)
+  {
+      if (new_monos_added_count == 0 || monos[i].exp != new_monos_buffer[new_monos_added_count - 1].exp)
+      {
+        if(own)
+          new_monos_buffer[new_monos_added_count++] = monos[i];
+        else
+          new_monos_buffer[new_monos_added_count++] = MonoClone(&monos[i]);
+        continue;
+      }
+      else
+      {
+          Poly newMaybeZeroCoeff = PolyAdd(&monos[i].p, &new_monos_buffer[new_monos_added_count - 1].p);
+          poly_exp_t current_exp = monos[i].exp;
+          if(own)
+            PolyDestroy((Poly *)&monos[i].p);
+          MonoDestroy(&new_monos_buffer[new_monos_added_count - 1]);
+          if (PolyIsZero(&newMaybeZeroCoeff))
+              new_monos_added_count--;
+          else
+          {
+              new_monos_buffer[new_monos_added_count - 1].exp = current_exp;
+              // if(own)
+              new_monos_buffer[new_monos_added_count - 1].p = newMaybeZeroCoeff;
+              // else
+              //   new_monos_buffer[new_monos_added_count - 1].p = PolyClone(&newMaybeZeroCoeff);
+          }
+      }
+  }
+  // zmniejszamy rozmiar tablicy jeśli nie potrzeba aż tyle miejsca
+  if (new_monos_added_count < count)
+  {
+    if (new_monos_added_count == 0)
+    {
+      free(new_monos_buffer);
+      return PolyZero();
+    }
+    new_monos_buffer = (Mono *)realloc(new_monos_buffer, sizeof(Mono) * new_monos_added_count);
+    CHECK_PTR(new_monos_buffer);
+  }
+  // przypadek gdy po dodaniu mamy wielomian złożony z jednomiany stopnia zero to zwracamy jako wielomian stały
+  if (new_monos_added_count == 1 && new_monos_buffer[0].exp == 0 && PolyIsCoeff(&new_monos_buffer[0].p))
+  {
+    poly_coeff_t coeff = new_monos_buffer[0].p.coeff;
+    MonoDestroy(&new_monos_buffer[0]);
+    free(new_monos_buffer);
+    return PolyFromCoeff(coeff);
+  }
+  else
+    return (Poly) {.size = new_monos_added_count, .arr = new_monos_buffer};
+}
+
 Poly PolyAddMonos(size_t count, const Mono monos[])
 {
     if(count == 0)
       return PolyZero();
-    /*
-      sortuje tablice monos i po kolei dodaje do nowej tablicy
-      uwzględnia powtarzające się potęgi oraz zerujące współczynniki i zlicza adekwatnie rozmiar
-    */
+    
     Mono* new_monos_buffer = (Mono*)malloc(count * sizeof(Mono));
-    qsort((Mono *)monos, count, sizeof(Mono), compareMonosByExp);
-    CHECK_PTR(new_monos_buffer);
-    size_t new_monos_added_count = 0;
-    new_monos_buffer[new_monos_added_count++] = monos[0];
-
-    for(size_t i = 1;i < count; i++)
-    {
-        if (new_monos_added_count == 0 || monos[i].exp != new_monos_buffer[new_monos_added_count - 1].exp)
-        {
-            new_monos_buffer[new_monos_added_count++] = monos[i];
-            continue;
-        }
-        else
-        {
-            Poly newMaybeZeroCoeff = PolyAdd(&monos[i].p, &new_monos_buffer[new_monos_added_count - 1].p);
-            poly_exp_t current_exp = monos[i].exp;
-            PolyDestroy((Poly *)&monos[i].p);
-            MonoDestroy(&new_monos_buffer[new_monos_added_count - 1]);
-            if (PolyIsZero(&newMaybeZeroCoeff))
-                new_monos_added_count--;
-            else
-            {
-                new_monos_buffer[new_monos_added_count - 1].exp = current_exp;
-                new_monos_buffer[new_monos_added_count - 1].p = newMaybeZeroCoeff;
-            }
-        }
-
-    }
-
-    // zmniejszamy rozmiar tablicy jeśli nie potrzeba aż tyle miejsca
-    if (new_monos_added_count < count)
-    {
-      if (new_monos_added_count == 0)
-      {
-        free(new_monos_buffer);
-        return PolyZero();
-      }
-      new_monos_buffer = (Mono *)realloc(new_monos_buffer, sizeof(Mono) * new_monos_added_count);
-      CHECK_PTR(new_monos_buffer);
-    }
-
-    // przypadek gdy po dodaniu mamy wielomian złożony z jednomiany stopnia zero to zwracamy jako wielomian stały
-    if (new_monos_added_count == 1 && new_monos_buffer[0].exp == 0 && PolyIsCoeff(&new_monos_buffer[0].p))
-    {
-      poly_coeff_t coeff = new_monos_buffer[0].p.coeff;
-      MonoDestroy(&new_monos_buffer[0]);
-      free(new_monos_buffer);
-      return PolyFromCoeff(coeff);
-    }
-    else
-      return (Poly) {.size = new_monos_added_count, .arr = new_monos_buffer};
+    return PolySumMonos(count, monos, new_monos_buffer, true);
 }
 
 void PolyDestroy(Poly *p)
@@ -523,4 +524,105 @@ Poly PolyAt(const Poly *p, poly_coeff_t x)
     PolyDestroy(&temp2);
   } 
   return acc;
+}
+
+/**
+ * Sumuje listę jednomianów i tworzy z nich wielomian. Przejmuje na własność
+ * pamięć wskazywaną przez @p monos i jej zawartość. Może dowolnie modyfikować
+ * zawartość tej pamięci. Zakładamy, że pamięć wskazywana przez @p monos
+ * została zaalokowana na stercie. Jeśli @p count lub @p monos jest równe zeru
+ * (NULL), tworzy wielomian tożsamościowo równy zeru.
+ * @param[in] count : liczba jednomianów
+ * @param[in] monos : tablica jednomianów
+ * @return wielomian będący sumą jednomianów
+ */
+Poly PolyOwnMonos(size_t count, Mono *monos)
+{
+  if(count == 0 || monos == NULL)
+    return PolyZero();
+  
+  return PolySumMonos(count, monos, monos, true);
+}
+
+/**
+ * Sumuje listę jednomianów i tworzy z nich wielomian. Nie modyfikuje zawartości
+ * tablicy @p monos. Jeśli jest to wymagane, to wykonuje pełne kopie jednomianów
+ * z tablicy @p monos. Jeśli @p count lub @p monos jest równe zeru (NULL),
+ * tworzy wielomian tożsamościowo równy zeru.
+ * @param[in] count : liczba jednomianów
+ * @param[in] monos : tablica jednomianów
+ * @return wielomian będący sumą jednomianów
+ */
+Poly PolyCloneMonos(size_t count, const Mono monos[])
+{
+  if(count == 0 || monos == NULL)
+    return PolyZero();
+  
+  Mono* new_monos_buffer = malloc(count * sizeof(Mono));
+  CHECK_PTR(new_monos_buffer);
+
+  return PolySumMonos(count, monos, new_monos_buffer, false);
+}
+
+Poly PolyPower(const Poly *p, poly_exp_t exp)
+{
+  Poly acc = PolyFromCoeff(1);
+  Poly base = PolyClone(p);
+  Poly tmp;
+  while(true)
+  {
+    if(exp & 1)
+    {
+      tmp = PolyMul(&acc, &base);
+      PolyDestroy(&acc);
+      acc = tmp;
+    }
+    exp >>= 1;
+    if(!exp)
+      break;
+    tmp = PolyMul(&base, &base);
+    PolyDestroy(&base);
+    base = tmp;
+  }
+  PolyDestroy(&base);
+
+  return acc;
+}
+
+Poly PolyComposeWrapper(const Poly *p, size_t k, size_t q_size, const Poly q[])
+{
+  if(PolyIsCoeff(p))
+    return *p;
+  if(k == 0)
+  {
+    poly_coeff_t sum = 0;
+    for(size_t i = 0; i < p->size; i++)
+      if(p->arr[i].exp == 0)
+        sum += PolyComposeWrapper(&p->arr[i].p, k, q_size, q).coeff;
+    return PolyFromCoeff(sum);
+  }
+  
+  Poly acc = PolyZero();
+
+  for(size_t i = 0; i < p->size; i++)
+  {
+    Poly tmp1;
+      tmp1 = PolyComposeWrapper(&p->arr[i].p, k - 1, q_size, q);
+    Poly tmp2 = PolyPower(&q[q_size - k] ,p->arr[i].exp);
+    Poly tmp3 = PolyMul(&tmp1, &tmp2);
+    Poly tmp4 = PolyAdd(&acc, &tmp3);
+
+    PolyDestroy(&tmp1);
+    PolyDestroy(&tmp2);
+    PolyDestroy(&tmp3);
+    PolyDestroy(&acc);
+    acc = tmp4;
+  }
+
+  return acc;
+}
+
+Poly PolyCompose(const Poly *p, size_t k, const Poly q[])
+{
+  return PolyComposeWrapper(p, k, k, q);
 }
