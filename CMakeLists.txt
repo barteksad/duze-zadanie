@@ -35,6 +35,7 @@ set(SOURCE_FILES
 add_executable(poly ${SOURCE_FILES})
 
 set(TEST_SOURCE_FILES
+    src/macros.h
     src/poly.c
     src/poly.h
     src/stack.c

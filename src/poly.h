@@ -158,7 +158,7 @@ Poly PolyAdd(const Poly *p, const Poly *q);
  * wykładnik p równy wykładnikowi p : 0, 
  * wykładnik p większy niż wykładnik p : 1
  */
-int compareMonosByExp(const void * lhs, const void * rhs);
+int CompareMonosByExp(const void * lhs, const void * rhs);
 
 /**
  * Sumuje listę jednomianów i tworzy z nich wielomian.
@@ -266,7 +266,7 @@ Poly PolyOwnMonos(size_t count, Mono *monos);
  */
 Poly PolyCloneMonos(size_t count, const Mono monos[]);
 
-Poly PolyPower(Poly *p, poly_exp_t exp);
+Poly PolyPower(const Poly *p, poly_exp_t exp);
 
 Poly PolyCompose(const Poly *p, size_t k, const Poly q[]);
 

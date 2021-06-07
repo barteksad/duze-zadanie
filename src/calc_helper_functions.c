@@ -6,33 +6,23 @@
   @date 2021
 */
 
+#pragma once
 #include "calc_helper_functions.h"
+#include "macros.h"
 #include "stack.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
-
-// wczytuje znaki do końca złego wiersza
-#define BAD_INPUT(c) \
-  do { \
-    while(c != '\n' && c != EOF) { \
-      c=getc(stdin); \
-    } \
-    ungetc(c, stdin); \
-  } while (0)
-
-#define CHECK_PTR(p)  \
-  do {                \
-    if (p == NULL) {  \
-      exit(1);        \
-    }                 \
-  } while (0)
+#include <errno.h>
 
 #define POLY_EXP_MAX 2147483647 // specyfikacja zadania
 #define MAX_TASK_LEN 8 // IS_COEFF
 
-enum taskType
+/**
+ * Enum reprezentujący operacje wykonywane przez kalkulator
+ */
+static enum taskType
 {
     ZERO,
     IS_COEFF,
@@ -52,9 +42,10 @@ enum taskType
     __INVALID__
 };
 
-// '\n' nie jest tu celowo rozpatrywany
-bool IsWhitespace(char c)
+
+bool IsWhitespace(int c)
 {
+// '\n' nie jest tu celowo rozpatrywany
     switch(c)
     {
         case ' ':
@@ -72,7 +63,7 @@ bool IsWhitespace(char c)
     }
 }
 
-bool IsAlpha(char c)
+bool IsAlpha(int c)
 {
     if(c >= 'A' && c <= 'Z')
         return true;
@@ -81,284 +72,12 @@ bool IsAlpha(char c)
     return false;
 }
 
-bool ReadNumberPolyCoeff(poly_coeff_t *x, poly_coeff_t sign)
-{
-    /*
-        wczytuje znak po znaku
-        weryfikacja czy wystąpił overflow polega na sprawdzeniu czy 
-            stara wartość > 0:
-                MAX - nowa_wartość < stara wartość
-            stara wartość < 0
-                min + nowa_wartość > stara wartość
-    */
-    char c;
-    bool at_least_one_numer = false;
-    while(true)
-    {
-        c = fgetc(stdin);
-        if(c == ')' || c == ',' || c == '\n' || c == EOF)
-            break;
-
-        if(c < '0' || c > '9')
-        {
-            BAD_INPUT(c);
-            return false;
-        }
-        at_least_one_numer = true;
-        poly_coeff_t current_number = (poly_coeff_t)(c - '0');
-        if((sign > 0 && (LONG_MAX - current_number)/10 < *x) || (sign < 0 && (LONG_MIN + current_number)/10 > -*x)) // overflow
-        {
-            BAD_INPUT(c);
-            return false;
-        }
-        *x *= 10;
-        *x += current_number;
-    }
-    if(!at_least_one_numer)
-    {
-        BAD_INPUT(c);
-        return false;
-    }
-    ungetc(c, stdin);
-    return true;
-}
-
-bool ReadNumberUnsignedLong(size_t *x)
-{
-    /*
-        wczytuje znak po znaku
-        weryfikacja czy wystąpił overflow polega na sprawdzeniu czy 
-            stara wartość > 0:
-                MAX - nowa_wartość < stara wartość
-            stara wartość < 0
-                min + nowa_wartość > stara wartość
-    */
-    char c;
-    bool at_least_one_numer = false;
-    while(true)
-    {
-        c = fgetc(stdin);
-        if(c == ')' || c == ',' || c == '\n' || c == EOF)
-            break;
-
-        if(c < '0' || c > '9')
-        {
-            BAD_INPUT(c);
-            return false;
-        }
-        at_least_one_numer = true;
-        size_t current_number = (size_t)(c - '0');
-        if((ULONG_MAX - current_number)/10 < *x) // overflow
-        {
-            BAD_INPUT(c);
-            return false;
-        }
-        *x *= 10;
-        *x += current_number;
-    }
-    if(!at_least_one_numer)
-    {
-        BAD_INPUT(c);
-        return false;
-    }
-    ungetc(c, stdin);
-    return true; 
-}
-
-bool ReadNumberPolyExp(poly_exp_t *x)
-{
-    /*
-        wczytuje znak po znaku
-        weryfikacja czy wystąpił overflow polega na sprawdzeniu czy 
-            stara wartość > 0:
-                MAX - nowa_wartość < stara wartość
-            stara wartość < 0
-                min + nowa_wartość > stara wartość
-    */
-    char c;
-    bool at_least_one_numer = false;
-    while(true)
-    {
-        c = fgetc(stdin);
-        if(c == ')' || c == ',' || c == '\n' || c == EOF)
-            break;
-
-        if(c < '0' || c > '9')
-        {
-            BAD_INPUT(c);
-            return false;
-        }
-        at_least_one_numer = true;
-        int current_number = (size_t)(c - '0');
-        if((INT_MAX - current_number)/10 < *x) // overflow
-        {
-            BAD_INPUT(c);
-            return false;
-        }
-        *x *= 10;
-        *x += current_number;
-    }
-    if(!at_least_one_numer)
-    {
-        BAD_INPUT(c);
-        return false;
-    }
-    ungetc(c, stdin);
-    return true; 
-}
-
-
-Poly* ReadPoly()
-{
-    char c = fgetc(stdin);
-    if(c != '(') // musi zaczynać się ()
-    {
-        BAD_INPUT(c);
-        return NULL;
-    }
-
-    Poly *p = NULL;
-    c = fgetc(stdin);
-    if(c != '-' && c != '\n' && c != EOF)
-        ungetc(c, stdin);
-    if(c == '(') // jeśli coef to jednomian to wywołujemy się rekurencyjnie
-    {
-        p = ReadPoly();
-        if(p == NULL)
-        return NULL;
-    }
-    else if(c == '-' || (c >= '0' && c <= '9')) // wczytywanie coeff-a
-    {
-        poly_coeff_t sign = 1;
-        poly_coeff_t coeff = 0;
-        if(c == '-')
-            sign = -1;
-        bool success = ReadNumberPolyCoeff(&coeff, sign);
-        if(!success)
-        {
-            if(p)
-            {
-                PolyDestroy(p);
-                free(p);
-            }
-            return NULL;
-        }
-        coeff *= sign;
-        p = malloc(sizeof(Poly));
-        CHECK_PTR(p);
-        *p = PolyFromCoeff(coeff);
-    }
-    else // nie coeff, nie mono to błąd
-    {
-        BAD_INPUT(c);
-        return NULL;
-    }
-
-    c = fgetc(stdin);
-    Poly *q;
-    if(c != ',') // następnie musi być przecinek
-    {
-        BAD_INPUT(c);
-        PolyDestroy(p);
-        free(p);
-        return NULL;
-    }
-    else // wczytywanie wykładnika i tworzenie wielomianu
-    {
-        poly_exp_t exp = 0;
-        bool success = ReadNumberPolyExp(&exp);
-        if(exp > POLY_EXP_MAX) 
-            success = false;
-        if(!success)
-        {
-            PolyDestroy(p);
-            free(p);
-            return NULL;
-        }
-
-        if((exp == 0 && PolyIsCoeff(p)) || (PolyIsCoeff(p) && p->coeff == 0))
-            q = p;
-        else
-        {
-            q = malloc(sizeof(Poly));
-            CHECK_PTR(q);
-            Mono m[] = {MonoFromPoly(p, exp)};
-            *q = PolyAddMonos(1, m);
-            free(p);
-        }
-    }
-
-    c = getc(stdin);
-    if(c != ')') // potem musi być )
-    {
-        PolyDestroy(q);
-        free(q);
-        BAD_INPUT(c);
-        return NULL;
-    }
-
-    c = getc(stdin);
-    if(c == '\n' || c == EOF || c == ',')
-    {
-        ungetc(c, stdin);
-        return q;
-    }
-    else if(c == '+') // jeśli + to rekurencyjnie wczytujemy następny i zwracamy sumę
-    {
-        p = ReadPoly();
-        if(p == NULL)
-        {
-            PolyDestroy(q);
-            free(q);
-            return NULL;
-        }
-        Poly *w = malloc(sizeof(Poly));
-        *w = PolyAdd(p, q);
-        PolyDestroy(p);
-        PolyDestroy(q);
-        free(p);
-        free(q);
-        return w;
-    }
-    else // nie +, nie koniec lini to błąd
-    {
-        BAD_INPUT(c);
-        PolyDestroy(q);
-        free(q);
-        return NULL;
-    }
-}
-
-bool ReadPolyCoeff(Stack *stack, char c)
-{
-    poly_coeff_t sign = 1;
-    if(c == '-')
-        sign = -1;
-    else
-        ungetc(c, stdin);
-
-    poly_coeff_t value = 0;
-    bool success = ReadNumberPolyCoeff(&value, sign);
-    if(success)
-    {
-        c = fgetc(stdin);
-        if(c != '\n' && c != EOF)
-            success = false;
-        ungetc(c, stdin);
-    }
-    if(!success)
-    {
-        BAD_INPUT(c);
-        return false;
-    }
-
-    value *= sign;
-    Poly p = PolyFromCoeff(value);
-    StackAdd(stack, p);
-    return true;
-}
-
-enum taskType DecodeTask(char* input_string)
+/**
+ * Rozpoznaje zadanie na podstawie napisu.
+ * @param[in] input_string wczytany napis
+ * @return enum z typem zadania
+ */
+static enum taskType DecodeTask(char* input_string)
 {
     if(!strcmp(input_string, "ZERO"))
         return ZERO;
@@ -394,7 +113,312 @@ enum taskType DecodeTask(char* input_string)
     
 }
 
-void ReadTask(Stack *stack, char c, size_t row_number)
+/**
+ * Obsługa zadania ZERO.
+ * @param[in] stack stos z wielomianami
+ */
+static void TaskZero(Stack *stack)
+{
+    Poly p = PolyZero();
+    StackAdd(stack, p);
+}
+
+/**
+ * Obsługa zadania IS_COEFF.
+ * @param[in] stack stos z wielomianami
+ * @param[in] row_number numer aktualnego wiersza
+ */
+static void TaskIsCoeff(Stack *stack, size_t row_number)
+{
+    if(StackSize(stack) == 0)
+        PrintError(STACK_UNDERFLOW, row_number);
+    else
+    {
+        bool is_coef = PolyIsCoeff(StackHead(stack));
+        printf("%d\n", is_coef);
+    }
+}
+
+/**
+ * Obsługa zadania IS_ZERO.
+ * @param[in] stack stos z wielomianami
+ * @param[in] row_number numer aktualnego wiersza
+ */
+static void TaskIsZero(Stack *stack, size_t row_number)
+{
+    if(StackSize(stack) == 0)
+        PrintError(STACK_UNDERFLOW, row_number);
+    else
+    {
+        bool is_zero = PolyIsZero(StackHead(stack));
+        printf("%d\n", is_zero);
+    }
+}
+
+/**
+ * Obsługa zadania CLONE.
+ * @param[in] stack stos z wielomianami
+ * @param[in] row_number numer aktualnego wiersza
+ */
+static void TaskClone(Stack *stack, size_t row_number)
+{
+    if(StackSize(stack) == 0)
+        PrintError(STACK_UNDERFLOW, row_number);
+    else
+    {
+        Poly *p = StackHead(stack);
+        Poly q = PolyClone(p);
+        StackAdd(stack, q);
+    }
+}
+
+/**
+ * Obsługa zadania ADD.
+ * @param[in] stack stos z wielomianami
+ * @param[in] row_number numer aktualnego wiersza
+ */
+static void TaskAdd(Stack *stack, size_t row_number)
+{
+    if(StackSize(stack) < 2)
+        PrintError(STACK_UNDERFLOW, row_number);
+    else
+    {
+        Poly p = StackPop(stack);
+        Poly q = StackPop(stack);
+        Poly r = PolyAdd(&p, &q);
+        PolyDestroy(&p);
+        PolyDestroy(&q);
+        StackAdd(stack, r);
+    }
+}
+
+/**
+ * Obsługa zadania MUL.
+ * @param[in] stack stos z wielomianami
+ * @param[in] row_number numer aktualnego wiersza
+ */
+static void TaskMul(Stack *stack, size_t row_number)
+{
+    if(StackSize(stack) < 2)
+        PrintError(STACK_UNDERFLOW, row_number);
+    else
+    {
+        Poly p = StackPop(stack);
+        Poly q = StackPop(stack);
+        Poly r = PolyMul(&p, &q);
+        PolyDestroy(&p);
+        PolyDestroy(&q);
+        StackAdd(stack, r);
+    }
+}
+
+/**
+ * Obsługa zadania NEG.
+ * @param[in] stack stos z wielomianami
+ * @param[in] row_number numer aktualnego wiersza
+ */
+static void TaskNeg(Stack *stack, size_t row_number)
+{
+    if(StackSize(stack) == 0)
+        PrintError(STACK_UNDERFLOW, row_number);
+    else
+    {
+        Poly p = StackPop(stack);
+        Poly q = PolyNeg(&p);
+        PolyDestroy(&p);
+        StackAdd(stack, q);
+    }
+}
+
+/**
+ * Obsługa zadania SUB.
+ * @param[in] stack stos z wielomianami
+ * @param[in] row_number numer aktualnego wiersza
+ */
+static void TaskSub(Stack *stack, size_t row_number)
+{
+    if(StackSize(stack) < 2)
+        PrintError(STACK_UNDERFLOW, row_number);
+    else
+    {
+        Poly p = StackPop(stack);
+        Poly q = StackPop(stack);
+        Poly r = PolySub(&p, &q);
+        PolyDestroy(&p);
+        PolyDestroy(&q);
+        StackAdd(stack, r);
+    }
+}
+
+/**
+ * Obsługa zadania IS_EQ.
+ * @param[in] stack stos z wielomianami
+ * @param[in] row_number numer aktualnego wiersza
+ */
+static void TaskIsEq(Stack *stack, size_t row_number)
+{
+    if(StackSize(stack) < 2)
+        PrintError(STACK_UNDERFLOW, row_number);
+    else
+    {
+        Poly *p = StackHead(stack);
+        Poly *q = StackHead2(stack);
+        bool is_eq = PolyIsEq(p, q);
+        printf("%d\n", is_eq);
+    }
+}
+
+/**
+ * Obsługa zadania DEG.
+ * @param[in] stack stos z wielomianami
+ * @param[in] row_number numer aktualnego wiersza
+ */
+static void TaskDeg(Stack *stack, size_t row_number)
+{
+    if(StackSize(stack) == 0)
+        PrintError(STACK_UNDERFLOW, row_number);
+    else
+    {
+        poly_exp_t exp = PolyDeg(StackHead(stack));
+        printf("%d\n", exp);
+    }
+}
+
+/**
+ * Obsługa zadania DEG_BY.
+ * @param[in] stack stos z wielomianami
+ * @param[in] var_idx wartość dla polecenia DEG_BY
+ * @param[in] row_number numer aktualnego wiersza
+ */
+static void TaskDegBy(Stack *stack, size_t var_idx, size_t row_number)
+{
+    if(StackSize(stack) == 0)
+        PrintError(STACK_UNDERFLOW, row_number);
+    else
+    {
+        poly_exp_t exp = PolyDegBy(StackHead(stack), var_idx);
+        printf("%d\n", exp);
+    }
+}
+
+/**
+ * Obsługa zadania AT.
+ * @param[in] stack stos z wielomianami
+ * @param[in] poly_coeff_t wartość dla polecenia AT
+ * @param[in] row_number numer aktualnego wiersza
+ */
+static void TaskAt(Stack *stack, poly_coeff_t x, size_t row_number)
+{
+    if(StackSize(stack) == 0)
+        PrintError(STACK_UNDERFLOW, row_number);
+    else
+    {
+        Poly p = StackPop(stack);
+        Poly q = PolyAt(&p, x);
+        PolyDestroy(&p);
+        StackAdd(stack, q);
+    }
+}
+
+/**
+ * Wypisuje wielomian
+ * @param[in] p wielomian
+ */
+static void PrintPoly(Poly *p);
+
+/**
+ * Wypisuje jednomian
+ * @param[in] m jednomian
+ */
+static void PrintMono(Mono *m)
+{
+    printf("(");
+    PrintPoly(&m->p);
+    printf(",%d)", m->exp);
+}
+
+static void PrintPoly(Poly *p)
+{
+    if(PolyIsCoeff(p))
+    {
+        printf("%ld", p->coeff);
+        return;
+    }
+    
+    for(size_t i = 0; i < p->size; i++)
+    {
+        if(i>0)
+            printf("+");
+        PrintMono(&p->arr[i]);
+    }
+}
+
+/**
+ * Obsługa zadania PRINT.
+ * @param[in] stack stos z wielomianami
+ * @param[in] row_number numer aktualnego wiersza
+ */
+static void TaskPrint(Stack *stack, size_t row_number)
+{
+    if(StackSize(stack) == 0)
+    {
+        PrintError(STACK_UNDERFLOW, row_number);
+        return;
+    }
+
+    PrintPoly(StackHead(stack));
+    printf("\n");
+}
+
+/**
+ * Obsługa zadania POP.
+ * @param[in] stack stos z wielomianami
+ * @param[in] row_number numer aktualnego wiersza
+ */
+static void TaskPop(Stack *stack, size_t row_number)
+{
+    if(StackSize(stack) == 0)
+        PrintError(STACK_UNDERFLOW, row_number);
+    else
+    {
+        Poly p = StackPop(stack);
+        PolyDestroy(&p);
+    }
+}
+
+/**
+ * Obsługa zadania COMPOSE.
+ * @param[in] stack stos z wielomianami
+ * @param[in] k liczba wielomianów do wykorzystania przy operacji COMPOSE
+ * @param[in] row_number numer aktualnego wiersza
+ */
+static void TaskCompose(Stack *stack, size_t k, size_t row_number)
+{
+    if(StackSize(stack) < k + 1 ||  k == ULONG_MAX)
+    {
+        PrintError(STACK_UNDERFLOW, row_number);
+        return;
+    }
+    else
+    {
+        Poly p = StackPop(stack);
+        Poly *q = malloc(k * sizeof(Poly)); 
+        CHECK_PTR(q);
+    
+        for(size_t i = 1; i <= k; i++)
+            q[k - i] = StackPop(stack);
+    
+        Poly p2 = PolyCompose(&p, k, q);
+        PolyDestroy(&p);
+        StackAdd(stack, p2);
+    
+        for(size_t i = 0; i < k; i++)
+            PolyDestroy(&q[i]);
+        free(q);
+    }
+}
+
+void ReadTask(Stack *stack, int c, size_t row_number)
 {
     char* input_string = malloc( (MAX_TASK_LEN + 1) * sizeof(char));
     CHECK_PTR(input_string);
@@ -411,18 +435,18 @@ void ReadTask(Stack *stack, char c, size_t row_number)
                 switch(task)
                 {
                     case DEG_BY:
-                        fprintf(stderr, "ERROR %ld DEG BY WRONG VARIABLE\n", row_number);
+                        PrintError(DEG_BY_WRONG_VARIABLE, row_number);
                         break;
                     case AT:
-                        fprintf(stderr, "ERROR %ld AT WRONG VALUE\n", row_number);
+                        PrintError(AT_WRONG_VALUE, row_number);
                         break;
                     default:
-                        fprintf(stderr, "ERROR %ld WRONG COMMAND\n", row_number);
+                        PrintError(INVALID_COMMAND, row_number);
                         break;
                 }
             }
             else
-                fprintf(stderr, "ERROR %ld WRONG COMMAND\n", row_number);
+                PrintError(INVALID_COMMAND, row_number);
 
             BAD_INPUT(c);
             free(input_string);
@@ -440,38 +464,97 @@ void ReadTask(Stack *stack, char c, size_t row_number)
     {
         c = fgetc(stdin);
         BAD_INPUT(c);
-        fprintf(stderr, "ERROR %ld WRONG COMMAND\n", row_number);
+        PrintError(INVALID_COMMAND, row_number);
         return;
     }
     
+    if(task == DEG_BY || task == AT || task == COMPOSE)
+    {
+        bool success = true;
+        c = fgetc(stdin);
+        if(c != ' ')
+            success = false;
+        else
+        {
+            c = fgetc(stdin);
+            if((!('0' <= c && c <= '9') && !(c == '-' && task == AT)))
+                success = false;
+            else
+                ungetc(c, stdin);
+        }
+        if(!success)
+        {
+            BAD_INPUT(c);
+            switch(task)
+            {
+                case DEG_BY:
+                    PrintError(DEG_BY_WRONG_VARIABLE, row_number);
+                    break;
+                case AT:
+                    PrintError(AT_WRONG_VALUE, row_number);
+                    break;
+                case COMPOSE:
+                    PrintError(COMPOSE_WRONG_VALUE, row_number);
+                    break;
+                default:
+                    break;
+            }            
+            return;
+        }
+    }
     size_t var_idx;
     poly_coeff_t x;
+
     if(task == DEG_BY)
     {
-        if(!ReadNumerToDegBy(&var_idx, row_number))
+        if(scanf("%lu", &var_idx) != 1 || errno != 0)
+        {
+            BAD_INPUT(c);
+            PrintError(DEG_BY_WRONG_VARIABLE, row_number);
             return;
+        }
     }
     else if(task == AT)
     {
-        if(!ReadNumberToAt(&x, row_number))
-            return;
+        if(scanf("%ld", &x) != 1 || errno != 0)
+        {
+            BAD_INPUT(c);
+            PrintError(AT_WRONG_VALUE, row_number);      
+            return;  
+        }
     }
     else if(task == COMPOSE)
     {
-        if(!ReadNumerToCompose(&var_idx, row_number))
-            return;
-    }
-    else
-    {
-        c = fgetc(stdin);
-        if(c != '\n' && c != EOF)
+        if(scanf("%lu", &var_idx) != 1 || errno != 0)
         {
             BAD_INPUT(c);
-            fprintf(stderr, "ERROR %ld WRONG COMMAND\n", row_number);
+            PrintError(COMPOSE_WRONG_VALUE, row_number);
             return;
         }
-        ungetc(c, stdin);
     }
+
+    c = fgetc(stdin);
+    if(c != '\n' && c != EOF)
+    {
+        BAD_INPUT(c);
+        switch(task)
+        {
+            case DEG_BY:
+                PrintError(DEG_BY_WRONG_VARIABLE, row_number);
+                break;
+            case AT:
+                PrintError(AT_WRONG_VALUE, row_number);
+                break;
+            case COMPOSE:
+                PrintError(COMPOSE_WRONG_VALUE, row_number);
+                break;
+            default:
+                PrintError(INVALID_COMMAND, row_number);
+                break;
+        }
+        return;
+    }
+    ungetc(c, stdin);
 
     switch (task)
     {
@@ -526,294 +609,179 @@ void ReadTask(Stack *stack, char c, size_t row_number)
 
 }
 
-bool ReadNumerToDegBy(size_t *var_idx, size_t row_number)
+Poly* ReadPoly()
 {
-    bool success = false;
-    *var_idx = 0;
-    char c = fgetc(stdin);
-    if(c != ' ')
-        success = false;
-    else
-    {
-      success = ReadNumberUnsignedLong(var_idx);
-      c = fgetc(stdin);
-    }
-    if(!success || (c != '\n' && c != EOF))
+    int c = fgetc(stdin);
+    if(c != '(') // musi zaczynać się ()
     {
         BAD_INPUT(c);
-        fprintf(stderr, "ERROR %ld DEG BY WRONG VARIABLE\n", row_number);
-        return false;
+        return NULL;
     }
-    ungetc(c, stdin);
-    return true;
-}
 
-bool ReadNumberToAt(poly_coeff_t *x, size_t row_number)
-{
-    poly_coeff_t sign = 1;
-    bool success = false;
-    *x = 0;
-    char c = fgetc(stdin);
-    if(c != ' ')
-        success = false;
-    else
+    Poly *p = NULL;
+    c = fgetc(stdin);
+    if(c != '-' && c != '\n' && c != EOF)
+        ungetc(c, stdin);
+    if(c == '(') // jeśli coef to jednomian to wywołujemy się rekurencyjnie
     {
-        c = fgetc(stdin);
-        if(c == '-')
-            sign = -1;
+        p = ReadPoly();
+        if(p == NULL)
+        {
+            BAD_INPUT(c);
+            return NULL;
+        }
+    }
+    else if(c == '-' || (c >= '0' && c <= '9')) // wczytywanie coeff-a
+    {
+        ungetc(c, stdin);
+        poly_coeff_t coeff = 0;
+        int success = scanf("%lu", &coeff);
+        if(success != 1 || errno != 0)
+        {
+            if(p)
+            {
+                PolyDestroy(p);
+                free(p);
+            }
+            BAD_INPUT(c);
+            return NULL;
+        }
+
+        p = malloc(sizeof(Poly));
+        CHECK_PTR(p);
+        *p = PolyFromCoeff(coeff);
+    }
+    else // nie coeff, nie mono to błąd
+    {
+        BAD_INPUT(c);
+        return NULL;
+    }
+
+    c = fgetc(stdin);
+    Poly *q;
+    if(c != ',') // następnie musi być przecinek
+    {
+        BAD_INPUT(c);
+        PolyDestroy(p);
+        free(p);
+        return NULL;
+    }
+    else // wczytywanie wykładnika i tworzenie wielomianu
+    {
+        poly_exp_t exp = 0;
+        int success = scanf("%d", &exp);
+        if(exp > POLY_EXP_MAX || exp < 0 ) 
+            success = 0;
+        if(success != 1 || errno != 0)
+        {
+            PolyDestroy(p);
+            free(p);
+            BAD_INPUT(c);
+            return NULL;
+        }
+
+        if((exp == 0 && PolyIsCoeff(p)) || (PolyIsCoeff(p) && p->coeff == 0))
+            q = p;
         else
-            ungetc(c, stdin);
-        success = ReadNumberPolyCoeff(x, sign);
-        c = fgetc(stdin);
+        {
+            q = malloc(sizeof(Poly));
+            CHECK_PTR(q);
+            Mono m[] = {MonoFromPoly(p, exp)};
+            *q = PolyAddMonos(1, m);
+            free(p);
+        }
     }
-    if(!success || (c != '\n' && c != EOF))
+
+    c = getc(stdin);
+    if(c != ')') // potem musi być )
+    {
+        PolyDestroy(q);
+        free(q);
+        BAD_INPUT(c);
+        return NULL;
+    }
+
+    c = getc(stdin);
+    if(c == '\n' || c == EOF || c == ',')
+    {
+        ungetc(c, stdin);
+        return q;
+    }
+    else if(c == '+') // jeśli + to rekurencyjnie wczytujemy następny i zwracamy sumę
+    {
+        p = ReadPoly();
+        if(p == NULL)
+        {
+            PolyDestroy(q);
+            free(q);
+            return NULL;
+        }
+        Poly *w = malloc(sizeof(Poly));
+        CHECK_PTR(w);
+        *w = PolyAdd(p, q);
+        PolyDestroy(p);
+        PolyDestroy(q);
+        free(p);
+        free(q);
+        return w;
+    }
+    else // nie +, nie koniec lini to błąd
     {
         BAD_INPUT(c);
-        fprintf(stderr, "ERROR %ld AT WRONG VALUE\n", row_number);
-        return false;;
+        PolyDestroy(q);
+        free(q);
+        return NULL;
     }
-    ungetc(c, stdin);
-    *x *= sign;
-    return true;
 }
 
-bool ReadNumerToCompose(size_t *var_idx, size_t row_number)
+bool ReadPolyCoeff(Stack *stack)
 {
-    bool success = false;
-    *var_idx = 0;
-    char c = fgetc(stdin);
-    if(c != ' ')
-        success = false;
-    else
+    char c;
+    poly_coeff_t value = 0;
+    int success = scanf("%ld", &value);
+    if(success == 1 && errno == 0)
     {
-      success = ReadNumberUnsignedLong(var_idx);
-      c = fgetc(stdin);
+        c = fgetc(stdin);
+        if(c != '\n' && c != EOF)
+            success = false;
+        ungetc(c, stdin);
     }
-    if(!success || (c != '\n' && c != EOF))
+
+    if(success != 1 || errno != 0) 
     {
         BAD_INPUT(c);
-        fprintf(stderr, "ERROR %ld COMPOSE WRONG PARAMETER\n", row_number);
         return false;
     }
-    ungetc(c, stdin);
+
+    Poly p = PolyFromCoeff(value);
+    StackAdd(stack, p);
     return true;
 }
 
-void TaskZero(Stack *stack)
+void PrintError(enum errorType error, size_t row_number)
 {
-    Poly p = PolyZero();
-    StackAdd(stack, p);
-}
-
-void TaskIsCoeff(Stack *stack, size_t row_number)
-{
-    if(StackSize(stack) == 0)
-        fprintf(stderr, "ERROR %ld STACK UNDERFLOW\n", row_number);
-    else
+    switch(error)
     {
-        bool is_coef = PolyIsCoeff(StackHead(stack));
-        printf("%d\n", is_coef);
+        case STACK_UNDERFLOW:
+            fprintf(stderr, "ERROR %ld STACK UNDERFLOW\n", row_number);
+            break;
+        case INVALID_COMMAND:
+            fprintf(stderr, "ERROR %ld WRONG COMMAND\n", row_number);
+            break;
+        case DEG_BY_WRONG_VARIABLE:
+            fprintf(stderr, "ERROR %ld DEG BY WRONG VARIABLE\n", row_number);
+            break;
+        case AT_WRONG_VALUE:
+            fprintf(stderr, "ERROR %ld AT WRONG VALUE\n", row_number);
+            break;
+        case COMPOSE_WRONG_VALUE:
+            fprintf(stderr, "ERROR %ld COMPOSE WRONG PARAMETER\n", row_number);
+            break;
+        case WRONG_POLY:
+            fprintf(stderr, "ERROR %ld WRONG POLY\n", row_number);
+            break;
+        default:
+            assert(false);
+            break;
     }
 }
-
-void TaskIsZero(Stack *stack, size_t row_number)
-{
-    if(StackSize(stack) == 0)
-        fprintf(stderr, "ERROR %ld STACK UNDERFLOW\n", row_number);
-    else
-    {
-        bool is_zero = PolyIsZero(StackHead(stack));
-        printf("%d\n", is_zero);
-    }
-}
-
-void TaskClone(Stack *stack, size_t row_number)
-{
-    if(StackSize(stack) == 0)
-        fprintf(stderr, "ERROR %ld STACK UNDERFLOW\n", row_number);
-    else
-    {
-        Poly *p = StackHead(stack);
-        Poly q = PolyClone(p);
-        StackAdd(stack, q);
-    }
-}
-
-void TaskAdd(Stack *stack, size_t row_number)
-{
-    if(StackSize(stack) < 2)
-        fprintf(stderr, "ERROR %ld STACK UNDERFLOW\n", row_number);
-    else
-    {
-        Poly p = StackPop(stack);
-        Poly q = StackPop(stack);
-        Poly r = PolyAdd(&p, &q);
-        PolyDestroy(&p);
-        PolyDestroy(&q);
-        StackAdd(stack, r);
-    }
-}
-
-void TaskMul(Stack *stack, size_t row_number)
-{
-    if(StackSize(stack) < 2)
-        fprintf(stderr, "ERROR %ld STACK UNDERFLOW\n", row_number);
-    else
-    {
-        Poly p = StackPop(stack);
-        Poly q = StackPop(stack);
-        Poly r = PolyMul(&p, &q);
-        PolyDestroy(&p);
-        PolyDestroy(&q);
-        StackAdd(stack, r);
-    }
-}
-
-void TaskNeg(Stack *stack, size_t row_number)
-{
-    if(StackSize(stack) == 0)
-        fprintf(stderr, "ERROR %ld STACK UNDERFLOW\n", row_number);
-    else
-    {
-        Poly p = StackPop(stack);
-        Poly q = PolyNeg(&p);
-        PolyDestroy(&p);
-        StackAdd(stack, q);
-    }
-}
-
-void TaskSub(Stack *stack, size_t row_number)
-{
-    if(StackSize(stack) < 2)
-        fprintf(stderr, "ERROR %ld STACK UNDERFLOW\n", row_number);
-    else
-    {
-        Poly p = StackPop(stack);
-        Poly q = StackPop(stack);
-        Poly r = PolySub(&p, &q);
-        PolyDestroy(&p);
-        PolyDestroy(&q);
-        StackAdd(stack, r);
-    }
-}
-
-void TaskIsEq(Stack *stack, size_t row_number)
-{
-    if(StackSize(stack) < 2)
-        fprintf(stderr, "ERROR %ld STACK UNDERFLOW\n", row_number);
-    else
-    {
-        Poly *p = StackHead(stack);
-        Poly *q = StackHead2(stack);
-        bool is_eq = PolyIsEq(p, q);
-        printf("%d\n", is_eq);
-    }
-}
-
-void TaskDeg(Stack *stack, size_t row_number)
-{
-    if(StackSize(stack) == 0)
-        fprintf(stderr, "ERROR %ld STACK UNDERFLOW\n", row_number);
-    else
-    {
-        poly_exp_t exp = PolyDeg(StackHead(stack));
-        printf("%d\n", exp);
-    }
-}
-
-void TaskDegBy(Stack *stack, size_t var_idx, size_t row_number)
-{
-    if(StackSize(stack) == 0)
-        fprintf(stderr, "ERROR %ld STACK UNDERFLOW\n", row_number);
-    else
-    {
-        poly_exp_t exp = PolyDegBy(StackHead(stack), var_idx);
-        printf("%d\n", exp);
-    }
-}
-
-void TaskAt(Stack *stack, poly_coeff_t x, size_t row_number)
-{
-    if(StackSize(stack) == 0)
-        fprintf(stderr, "ERROR %ld STACK UNDERFLOW\n", row_number);
-    else
-    {
-        Poly p = StackPop(stack);
-        Poly q = PolyAt(&p, x);
-        PolyDestroy(&p);
-        StackAdd(stack, q);
-    }
-}
-
-void PrintMono(Mono *m)
-{
-    printf("(");
-    PrintPoly(&m->p);
-    printf(",%d)", m->exp);
-}
-
-void PrintPoly(Poly *p)
-{
-    if(PolyIsCoeff(p))
-    {
-        printf("%ld", p->coeff);
-        return;
-    }
-    
-    for(size_t i = 0; i < p->size; i++)
-    {
-        if(i>0)
-            printf("+");
-        PrintMono(&p->arr[i]);
-    }
-}
-
-void TaskPrint(Stack *stack, size_t row_number)
-{
-    if(StackSize(stack) == 0)
-    {
-        fprintf(stderr, "ERROR %ld STACK UNDERFLOW\n", row_number);
-        return;
-    }
-
-    PrintPoly(StackHead(stack));
-    printf("\n");
-}
-
-void TaskPop(Stack *stack, size_t row_number)
-{
-    if(StackSize(stack) == 0)
-        fprintf(stderr, "ERROR %ld STACK UNDERFLOW\n", row_number);
-    else
-    {
-        Poly p = StackPop(stack);
-        PolyDestroy(&p);
-    }
-}
-
-void TaskCompose(Stack *stack, size_t k, size_t row_number)
-{
-    if(StackSize(stack) < k + 1 ||  k == ULONG_MAX)
-    {
-        fprintf(stderr, "ERROR %ld STACK UNDERFLOW\n", row_number);
-        return;
-    }
-    else
-    {
-        Poly p = StackPop(stack);
-        Poly *q = malloc(k * sizeof(Poly)); 
-        CHECK_PTR(q);
-    
-        for(size_t i = 1; i <= k; i++)
-            q[k - i] = StackPop(stack);
-    
-        Poly p2 = PolyCompose(&p, k, q);
-        PolyDestroy(&p);
-        StackAdd(stack, p2);
-    
-        for(size_t i = 0; i < k; i++)
-            PolyDestroy(&q[i]);
-        free(q);
-    }
-}
-
